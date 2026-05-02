@@ -17,9 +17,8 @@ const inter = localFont({
 });
 
 export const metadata: Metadata = {
-  title: 'OpenMAIC',
-  description:
-    'The open-source AI interactive classroom. Upload a PDF to instantly generate an immersive, multi-agent learning experience.',
+  title: 'OpenTalib | AI Classroom Platform',
+  description: 'Open-source multi-user AI classroom management for schools',
 };
 
 export default function RootLayout({
