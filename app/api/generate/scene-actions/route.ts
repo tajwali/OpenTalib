@@ -24,7 +24,6 @@ import type {
 } from '@/lib/types/generation';
 import type { SpeechAction } from '@/lib/types/action';
 import { createLogger } from '@/lib/logger';
-import { apiError, apiSuccess } from '@/lib/server/api-response';
 import { resolveModelFromHeaders } from '@/lib/server/resolve-model';
 
 const log = createLogger('Scene Actions API');

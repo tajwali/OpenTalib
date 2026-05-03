@@ -16,7 +16,6 @@ import {
 import type { AgentInfo } from '@/lib/generation/generation-pipeline';
 import type { SceneOutline, PdfImage, ImageMapping } from '@/lib/types/generation';
 import { createLogger } from '@/lib/logger';
-import { apiError, apiSuccess } from '@/lib/server/api-response';
 import { resolveModelFromHeaders } from '@/lib/server/resolve-model';
 
 const log = createLogger('Scene Content API');
@@ -54,7 +53,7 @@ export async function POST(req: NextRequest) {
           allOutlines,
           pdfImages,
           imageMapping,
-          stageInfo,
+          stageInfo: _stageInfo,
           stageId,
           agents,
           languageDirective,

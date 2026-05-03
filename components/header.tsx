@@ -44,7 +44,7 @@ export function Header({ currentSceneTitle, courseTitle }: HeaderProps) {
   const exportRef = useRef<HTMLDivElement>(null);
   const scenes = useStageStore((s) => s.scenes);
   const stage = useStageStore((s) => s.stage);
-  const outlines = useStageStore((s) => s.outlines);
+  const _outlines = useStageStore((s) => s.outlines);
   const generatingOutlines = useStageStore((s) => s.generatingOutlines);
   const failedOutlines = useStageStore((s) => s.failedOutlines);
   const mediaTasks = useMediaGenerationStore((s) => s.tasks);

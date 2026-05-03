@@ -59,7 +59,7 @@ export function PBLRenderer({ content, mode: _mode, sceneId }: PBLRendererProps)
 
       updateConfig(newConfig);
     },
-    [projectConfig, updateConfig, t],
+    [projectConfig, updateConfig],
   );
 
   const handleReset = useCallback(() => {

@@ -101,7 +101,7 @@ export default function ProfilePage() {
           prev ? { ...prev, display_name: displayName, gender: gender || null } : null,
         );
       }
-    } catch (err) {
+    } catch (_err) {
       setError('Network error');
     } finally {
       setSaving(false);

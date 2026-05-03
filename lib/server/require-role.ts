@@ -1,4 +1,4 @@
-import { createClient, getSession } from '@/lib/supabase/server';
+import { getSession } from '@/lib/supabase/server';
 import { getSupabaseAdmin } from '@/lib/server/supabase-admin';
 import { NextResponse } from 'next/server';
 

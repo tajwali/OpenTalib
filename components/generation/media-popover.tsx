@@ -9,8 +9,6 @@ import {
   Mic,
   SlidersHorizontal,
   ChevronRight,
-  Play,
-  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -24,7 +22,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { useI18n } from '@/lib/hooks/use-i18n';
@@ -138,9 +135,6 @@ export function MediaPopover({ onSettingsOpen }: MediaPopoverProps) {
   const ttsVoice = useSettingsStore((s) => s.ttsVoice);
   const ttsSpeed = useSettingsStore((s) => s.ttsSpeed);
   const ttsProvidersConfig = useSettingsStore((s) => s.ttsProvidersConfig);
-  const setTTSProvider = useSettingsStore((s) => s.setTTSProvider);
-  const setTTSVoice = useSettingsStore((s) => s.setTTSVoice);
-  const setTTSSpeed = useSettingsStore((s) => s.setTTSSpeed);
 
   const asrProviderId = useSettingsStore((s) => s.asrProviderId);
   const asrLanguage = useSettingsStore((s) => s.asrLanguage);
@@ -215,7 +209,7 @@ export function MediaPopover({ onSettingsOpen }: MediaPopoverProps) {
 
   // TTS: grouped by provider, voices as items (matching Image/Video pattern)
   // Browser-native voices are split into sub-groups by language.
-  const ttsGroups = useMemo(() => {
+  const _ttsGroups = useMemo(() => {
     const groups: SelectGroupData[] = [];
 
     for (const p of Object.values(TTS_PROVIDERS)) {
@@ -260,7 +254,7 @@ export function MediaPopover({ onSettingsOpen }: MediaPopoverProps) {
   }, [ttsProvidersConfig, locale, browserVoices, t]);
 
   // TTS preview
-  const handlePreview = useCallback(async () => {
+  const _handlePreview = useCallback(async () => {
     if (previewing) {
       stopPreview();
       return;

@@ -334,7 +334,11 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
   const toggleStudent = (id: string) => {
     setSelectedStudentIds((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
   };
@@ -829,9 +833,11 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
                         onClick={() =>
                           setExpandedExams((prev) => {
                             const next = new Set(prev);
-                            next.has(exam.exam_id)
-                              ? next.delete(exam.exam_id)
-                              : next.add(exam.exam_id);
+                            if (next.has(exam.exam_id)) {
+                              next.delete(exam.exam_id);
+                            } else {
+                              next.add(exam.exam_id);
+                            }
                             return next;
                           })
                         }
