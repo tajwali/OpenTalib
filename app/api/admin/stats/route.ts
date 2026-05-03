@@ -94,7 +94,7 @@ export async function GET() {
             }
           }
         }
-      } catch (e) {
+      } catch (_e) {
         // Ignore errors if directory doesn't exist
       }
     };

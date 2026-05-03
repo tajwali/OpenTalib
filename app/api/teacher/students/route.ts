@@ -122,7 +122,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     // Profile field updates
-    const profileUpdates: Record<string, any> = {};
+    const profileUpdates: Record<string, unknown> = {};
     if (body.display_name !== undefined) {
       const name = body.display_name.trim();
       if (!name)

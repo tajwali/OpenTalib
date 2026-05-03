@@ -104,7 +104,7 @@ export async function POST(request: Request) {
 
   if (data.user) {
     const admin = getSupabaseAdmin();
-    const profileData: any = {
+    const profileData: Record<string, unknown> = {
       id: data.user.id,
       display_name: displayName ?? '',
       role: finalRole,

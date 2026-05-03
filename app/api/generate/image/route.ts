@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
         startKeepAlive();
 
         let result;
-        let lastError;
+        let _lastError;
         const maxRetries = 3;
         const retryDelayMs = 5000;
 
@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
             result = await generateImage({ providerId, apiKey, baseUrl, model: clientModel }, body);
             break;
           } catch (error) {
-            lastError = error;
+            _lastError = error;
             const message = error instanceof Error ? error.message : String(error);
             const isRetryable =
               message.includes('503') ||

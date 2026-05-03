@@ -72,7 +72,7 @@ export default function ProfilePage() {
 
     setSaving(true);
     try {
-      const body: any = {
+      const body: Record<string, unknown> = {
         display_name: displayName,
         gender: gender || null,
       };

@@ -25,7 +25,7 @@ export async function GET() {
 
     const studentGrade = profile?.grade ? parseInt(String(profile.grade)) : null;
 
-    let query = admin
+    const query = admin
       .from('course_assignments')
       .select(
         `
@@ -56,12 +56,12 @@ export async function GET() {
     }
 
     const result = (data ?? [])
-      .filter((row: any) => {
+      .filter((row: Record<string, unknown>) => {
         if (!studentGrade) return true;
         const classroomGrade = row.classrooms?.grade;
         return !classroomGrade || classroomGrade === studentGrade;
       })
-      .map((row: any) => ({
+      .map((row: Record<string, unknown>) => ({
         id: row.classrooms?.id ?? row.classroom_id,
         title: row.classrooms?.title ?? '',
         short_title: row.classrooms?.short_title ?? null,

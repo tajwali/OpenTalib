@@ -31,7 +31,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       grade?: string | number | null;
     };
 
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (scenes !== undefined) updateData.scenes = scenes;
     if (subjectId !== undefined) updateData.subject_id = subjectId;
     if (grade !== undefined) updateData.grade = grade;

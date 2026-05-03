@@ -100,7 +100,7 @@ export async function PATCH(request: NextRequest) {
       scenes_completed = [...scenes_completed, body.scene_viewed];
     }
 
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       user_id: user.id,
       classroom_id: body.classroom_id,
       last_accessed: new Date().toISOString(),
@@ -130,7 +130,11 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
-async function evaluateCompletion(userId: string, classroomId: string, admin: any) {
+async function evaluateCompletion(
+  userId: string,
+  classroomId: string,
+  admin: ReturnType<typeof getSupabaseAdmin>,
+) {
   const { data: classroom } = await admin
     .from('classrooms')
     .select('scenes')
@@ -138,7 +142,7 @@ async function evaluateCompletion(userId: string, classroomId: string, admin: an
     .single();
   if (!classroom) return false;
 
-  const scenes = (classroom.scenes as any[]) || [];
+  const scenes = (classroom.scenes as unknown[]) || [];
   const totalScenes = scenes.length;
   if (totalScenes === 0) return false;
 
@@ -154,7 +158,9 @@ async function evaluateCompletion(userId: string, classroomId: string, admin: an
       .eq('user_id', userId)
       .eq('classroom_id', classroomId);
 
-    const completedQuizIds = new Set((results || []).map((r: any) => r.scene_id));
+    const completedQuizIds = new Set(
+      (results || []).map((r: Record<string, unknown>) => r.scene_id),
+    );
     // Only set completed = true if completedQuizzes >= totalQuizzes && totalQuizzes > 0
     return quizScenes.every((s) => completedQuizIds.has(s.id));
   } else {
