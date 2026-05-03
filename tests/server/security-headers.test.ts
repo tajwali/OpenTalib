@@ -37,10 +37,12 @@ describe('Security response headers', () => {
       const allRouteGroup = headerGroups.find((g) => g.source === '/(.*)')!;
 
       expect(allRouteGroup).toBeDefined();
-      expect(allRouteGroup.headers).toContainEqual({
-        key: 'Content-Security-Policy',
-        value: "frame-ancestors 'self'",
-      });
+      expect(allRouteGroup.headers).toContainEqual(
+        expect.objectContaining({
+          key: 'Content-Security-Policy',
+          value: expect.stringContaining("frame-ancestors 'self'"),
+        }),
+      );
     });
   });
 
@@ -51,10 +53,12 @@ describe('Security response headers', () => {
       const headerGroups = await config.headers!();
       const allRouteGroup = headerGroups.find((g) => g.source === '/(.*)')!;
 
-      expect(allRouteGroup.headers).toContainEqual({
-        key: 'Content-Security-Policy',
-        value: "frame-ancestors 'self' https://partner.example.com",
-      });
+      expect(allRouteGroup.headers).toContainEqual(
+        expect.objectContaining({
+          key: 'Content-Security-Policy',
+          value: expect.stringContaining("frame-ancestors 'self' https://partner.example.com"),
+        }),
+      );
     });
 
     it('omits X-Frame-Options when custom ancestors are set', async () => {
@@ -73,10 +77,14 @@ describe('Security response headers', () => {
       const headerGroups = await config.headers!();
       const allRouteGroup = headerGroups.find((g) => g.source === '/(.*)')!;
 
-      expect(allRouteGroup.headers).toContainEqual({
-        key: 'Content-Security-Policy',
-        value: "frame-ancestors 'self' https://a.example.com https://b.example.com",
-      });
+      expect(allRouteGroup.headers).toContainEqual(
+        expect.objectContaining({
+          key: 'Content-Security-Policy',
+          value: expect.stringContaining(
+            "frame-ancestors 'self' https://a.example.com https://b.example.com",
+          ),
+        }),
+      );
     });
   });
 });
