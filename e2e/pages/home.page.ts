@@ -8,7 +8,7 @@ export class HomePage {
 
   constructor(page: Page) {
     this.page = page;
-    this.logo = page.locator('img[alt="OpenMAIC"]');
+    this.logo = page.locator('img[alt="OpenTalib"]');
     this.textarea = page.locator('textarea');
     this.enterButton = page
       .getByRole('button', { name: /enter/i })
