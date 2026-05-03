@@ -29,7 +29,10 @@ export async function POST(request: NextRequest) {
     const id = stage.id || randomUUID();
     const baseUrl = buildRequestOrigin(request);
 
-    const persisted = await persistClassroom({ id, stage: { ...stage, id }, scenes, outlines }, baseUrl);
+    const persisted = await persistClassroom(
+      { id, stage: { ...stage, id }, scenes, outlines },
+      baseUrl,
+    );
 
     return apiSuccess({ id: persisted.id, url: persisted.url }, 201);
   } catch (error) {

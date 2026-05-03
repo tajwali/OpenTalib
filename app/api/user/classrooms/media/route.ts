@@ -1,5 +1,5 @@
-import { createLogger } from "@/lib/logger";
-const log = createLogger("MediaUpload");
+import { createLogger } from '@/lib/logger';
+const log = createLogger('MediaUpload');
 /**
  * POST /api/user/classrooms/media
  *
@@ -38,7 +38,7 @@ const ALLOWED_MIME = new Set([
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
 
 export async function POST(req: NextRequest) {
-  log.debug("Received media upload request");
+  log.debug('Received media upload request');
   const supabase = await createClient();
   const {
     data: { user },
@@ -90,10 +90,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (!ALLOWED_MIME.has(file.type)) {
-    return NextResponse.json(
-      { error: `File type not allowed: ${file.type}` },
-      { status: 415 },
-    );
+    return NextResponse.json({ error: `File type not allowed: ${file.type}` }, { status: 415 });
   }
   if (file.size > MAX_FILE_SIZE) {
     return NextResponse.json({ error: 'File too large (max 50 MB)' }, { status: 413 });

@@ -163,7 +163,9 @@ export function useDiscussionTTS({ enabled, agents, onAudioStateChange }: Discus
           ttsVoice: item.voiceId,
           ttsSpeed: ttsSpeed,
           ttsApiKey: providerConfig?.serverBaseUrl ? undefined : providerConfig?.apiKey,
-          ttsBaseUrl: providerConfig?.serverBaseUrl ? undefined : (providerConfig?.baseUrl || providerConfig?.customDefaultBaseUrl),
+          ttsBaseUrl: providerConfig?.serverBaseUrl
+            ? undefined
+            : providerConfig?.baseUrl || providerConfig?.customDefaultBaseUrl,
         }),
         signal: controller.signal,
       });

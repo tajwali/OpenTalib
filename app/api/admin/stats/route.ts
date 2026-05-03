@@ -12,17 +12,15 @@ export async function GET() {
     const admin = getSupabaseAdmin();
 
     // 1. User roles count
-    const { data: roleData } = await admin
-      .from('user_profiles')
-      .select('role');
-    
+    const { data: roleData } = await admin.from('user_profiles').select('role');
+
     const userRoles: Record<string, number> = {
       admin: 0,
       teacher: 0,
       school_student: 0,
-      mature_student: 0
+      mature_student: 0,
     };
-    (roleData || []).forEach(p => {
+    (roleData || []).forEach((p) => {
       if (p.role) userRoles[p.role] = (userRoles[p.role] || 0) + 1;
     });
 
@@ -39,7 +37,7 @@ export async function GET() {
     let totalScenes = 0;
     const subjectCounts: Record<string, number> = {};
 
-    (courses || []).forEach(c => {
+    (courses || []).forEach((c) => {
       if (Array.isArray(c.scenes)) totalScenes += c.scenes.length;
       if (c.subject_id) subjectCounts[c.subject_id] = (subjectCounts[c.subject_id] || 0) + 1;
     });
@@ -47,11 +45,11 @@ export async function GET() {
     // 3. Popular Subjects
     const { data: allSubjects } = await admin.from('subjects').select('id, name, icon');
     const popularSubjects = (allSubjects || [])
-      .map(s => ({
+      .map((s) => ({
         id: s.id,
         name: s.name,
         icon: s.icon,
-        count: subjectCounts[s.id] || 0
+        count: subjectCounts[s.id] || 0,
       }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
@@ -59,20 +57,20 @@ export async function GET() {
     // 4. Recent Activity (last 10)
     // We need teacher names, so let's get unique user IDs from the last 10 courses
     const recentRaw = (courses || []).slice(0, 10);
-    const uniqueUserIds = Array.from(new Set(recentRaw.map(c => c.user_id).filter(Boolean)));
-    
+    const uniqueUserIds = Array.from(new Set(recentRaw.map((c) => c.user_id).filter(Boolean)));
+
     const { data: teachers } = await admin
       .from('user_profiles')
       .select('id, display_name')
       .in('id', uniqueUserIds);
-    
-    const teacherMap = new Map((teachers || []).map(t => [t.id, t.display_name]));
 
-    const recentActivity = recentRaw.map(c => ({
+    const teacherMap = new Map((teachers || []).map((t) => [t.id, t.display_name]));
+
+    const recentActivity = recentRaw.map((c) => ({
       id: c.id,
       title: c.title,
       teacher_name: teacherMap.get(c.user_id) || 'Unknown',
-      created_at: c.created_at
+      created_at: c.created_at,
     }));
 
     // 5. Storage Usage (Real data from filesystem)
@@ -105,18 +103,19 @@ export async function GET() {
     const storageUsage = {
       mediaFilesCount,
       totalBytes,
-      formattedSize: totalBytes > 1024 * 1024 
-        ? `${(totalBytes / (1024 * 1024)).toFixed(1)} MB`
-        : `${(totalBytes / 1024).toFixed(1)} KB`
+      formattedSize:
+        totalBytes > 1024 * 1024
+          ? `${(totalBytes / (1024 * 1024)).toFixed(1)} MB`
+          : `${(totalBytes / 1024).toFixed(1)} KB`,
     };
-    
+
     return NextResponse.json({
       userRoles,
       totalCourses,
       totalScenes,
       popularSubjects,
       recentActivity,
-      storage: storageUsage
+      storage: storageUsage,
     });
   } catch (err) {
     console.error('[stats] Error:', err);

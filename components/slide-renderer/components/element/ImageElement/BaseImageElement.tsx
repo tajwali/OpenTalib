@@ -53,7 +53,7 @@ export function BaseImageElement({ elementInfo }: BaseImageElementProps) {
   const resolvedSrc =
     task?.status === 'done' && task.objectUrl
       ? task.objectUrl
-      : serverFallbackSrc ?? elementInfo.src;
+      : (serverFallbackSrc ?? elementInfo.src);
 
   const showDisabled = isPlaceholder && !task && !imageGenerationEnabled && !hasFallbackSrc;
   const showSkeleton =

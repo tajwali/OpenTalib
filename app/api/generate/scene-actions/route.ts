@@ -178,12 +178,12 @@ export async function POST(req: NextRequest) {
 
         startKeepAlive();
 
-        const actions = await generateSceneActions(
-          outline,
-          content,
-          aiCall,
-          { ctx, agents, userProfile, languageDirective },
-        );
+        const actions = await generateSceneActions(outline, content, aiCall, {
+          ctx,
+          agents,
+          userProfile,
+          languageDirective,
+        });
 
         stopKeepAlive();
 
@@ -249,4 +249,3 @@ export async function POST(req: NextRequest) {
     },
   });
 }
-

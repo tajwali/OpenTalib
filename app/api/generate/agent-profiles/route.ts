@@ -271,7 +271,9 @@ Return a JSON object with this exact structure:
 
         log.info(`Successfully generated ${agents.length} agent profiles for "${stageInfo.name}"`);
 
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ success: true, agents })}\n\n`));
+        controller.enqueue(
+          encoder.encode(`data: ${JSON.stringify({ success: true, agents })}\n\n`),
+        );
       } catch (error) {
         log.error('Agent profiles generation error:', error);
         controller.enqueue(

@@ -176,19 +176,15 @@ export async function POST(req: NextRequest) {
 
         startKeepAlive();
 
-        const content = await generateSceneContent(
-          effectiveOutline,
-          aiCall,
-          {
-            assignedImages,
-            imageMapping,
-            languageModel: effectiveOutline.type === 'pbl' ? languageModel : undefined,
-            visionEnabled: hasVision,
-            generatedMediaMapping,
-            agents,
-            languageDirective,
-          },
-        );
+        const content = await generateSceneContent(effectiveOutline, aiCall, {
+          assignedImages,
+          imageMapping,
+          languageModel: effectiveOutline.type === 'pbl' ? languageModel : undefined,
+          visionEnabled: hasVision,
+          generatedMediaMapping,
+          agents,
+          languageDirective,
+        });
 
         stopKeepAlive();
 
@@ -238,4 +234,3 @@ export async function POST(req: NextRequest) {
     },
   });
 }
-

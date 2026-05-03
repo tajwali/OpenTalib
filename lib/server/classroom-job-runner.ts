@@ -1,5 +1,9 @@
 import { createLogger } from '@/lib/logger';
-import { generateClassroom, type GenerateClassroomInput, type ModelParams } from '@/lib/server/classroom-generation';
+import {
+  generateClassroom,
+  type GenerateClassroomInput,
+  type ModelParams,
+} from '@/lib/server/classroom-generation';
 import {
   markClassroomGenerationJobFailed,
   markClassroomGenerationJobRunning,
@@ -89,12 +93,7 @@ export function runClassroomGenerationJob(
 
       if (userId) {
         try {
-          await saveClassroomToDatabase(
-            userId,
-            result.id,
-            input.requirement,
-            result.scenes,
-          );
+          await saveClassroomToDatabase(userId, result.id, input.requirement, result.scenes);
         } catch (dbError) {
           log.error(`Database save failed for classroom ${result.id}:`, dbError);
           // Never fail the job due to DB errors — filesystem save already succeeded

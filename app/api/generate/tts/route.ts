@@ -24,17 +24,25 @@ export const maxDuration = 30;
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { text, audioId, ttsProviderId, ttsModelId, ttsVoice: requestedVoice, ttsSpeed, ttsApiKey, ttsBaseUrl } =
-      body as {
-        text: string;
-        audioId: string;
-        ttsProviderId: TTSProviderId;
-        ttsModelId?: string;
-        ttsVoice: string;
-        ttsSpeed?: number;
-        ttsApiKey?: string;
-        ttsBaseUrl?: string;
-      };
+    const {
+      text,
+      audioId,
+      ttsProviderId,
+      ttsModelId,
+      ttsVoice: requestedVoice,
+      ttsSpeed,
+      ttsApiKey,
+      ttsBaseUrl,
+    } = body as {
+      text: string;
+      audioId: string;
+      ttsProviderId: TTSProviderId;
+      ttsModelId?: string;
+      ttsVoice: string;
+      ttsSpeed?: number;
+      ttsApiKey?: string;
+      ttsBaseUrl?: string;
+    };
 
     // Validate required fields
     if (!text || !audioId || !ttsProviderId || !requestedVoice) {

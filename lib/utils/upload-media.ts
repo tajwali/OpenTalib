@@ -32,10 +32,7 @@ const log = createLogger('UploadMedia');
  * Upload all client-side media blobs for `stageId` to the server and return
  * a deep-cloned copy of `scenes` with placeholder IDs replaced by server URLs.
  */
-export async function uploadMediaAndReplace(
-  scenes: Scene[],
-  stageId: string,
-): Promise<Scene[]> {
+export async function uploadMediaAndReplace(scenes: Scene[], stageId: string): Promise<Scene[]> {
   // Deep-clone to avoid mutating the live Zustand store
   const cloned = JSON.parse(JSON.stringify(scenes)) as Scene[];
 

@@ -56,15 +56,14 @@ export async function POST(request: NextRequest) {
 
         if (!body.prompt) {
           controller.enqueue(
-            encoder.encode(
-              `data: ${JSON.stringify({ error: 'Missing prompt', status: 400 })}\n\n`,
-            ),
+            encoder.encode(`data: ${JSON.stringify({ error: 'Missing prompt', status: 400 })}\n\n`),
           );
           controller.close();
           return;
         }
 
-        const providerId = (request.headers.get('x-image-provider') || 'seedream') as ImageProviderId;
+        const providerId = (request.headers.get('x-image-provider') ||
+          'seedream') as ImageProviderId;
         const clientApiKey = request.headers.get('x-api-key') || undefined;
         const clientBaseUrl = request.headers.get('x-base-url') || undefined;
         const clientModel = request.headers.get('x-image-model') || undefined;
@@ -73,9 +72,7 @@ export async function POST(request: NextRequest) {
           const ssrfError = await validateUrlForSSRF(clientBaseUrl);
           if (ssrfError) {
             controller.enqueue(
-              encoder.encode(
-                `data: ${JSON.stringify({ error: ssrfError, status: 403 })}\n\n`,
-              ),
+              encoder.encode(`data: ${JSON.stringify({ error: ssrfError, status: 403 })}\n\n`),
             );
             controller.close();
             return;
@@ -128,21 +125,33 @@ export async function POST(request: NextRequest) {
           } catch (error) {
             lastError = error;
             const message = error instanceof Error ? error.message : String(error);
-            const isRetryable = message.includes('503') || message.includes('429') || message.includes('high demand') || message.includes('overloaded');
-            
+            const isRetryable =
+              message.includes('503') ||
+              message.includes('429') ||
+              message.includes('high demand') ||
+              message.includes('overloaded');
+
             if (i < maxRetries && isRetryable) {
-              log.warn(`Image generation failed (${i + 1}/${maxRetries + 1}), retrying in ${retryDelayMs}ms: ${message}`);
-              await new Promise(resolve => setTimeout(resolve, retryDelayMs));
+              log.warn(
+                `Image generation failed (${i + 1}/${maxRetries + 1}), retrying in ${retryDelayMs}ms: ${message}`,
+              );
+              await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
               continue;
             }
             throw error;
           }
         }
-        if (result) log.info(`Image generation success: ${providerId}, result type=${result.base64 ? "base64" : result.url ? "url" : "none"}`);
+        if (result)
+          log.info(
+            `Image generation success: ${providerId}, result type=${result.base64 ? 'base64' : result.url ? 'url' : 'none'}`,
+          );
 
         stopKeepAlive();
 
-        if (result) controller.enqueue(encoder.encode(`data: ${JSON.stringify({ success: true, result })}\n\n`));
+        if (result)
+          controller.enqueue(
+            encoder.encode(`data: ${JSON.stringify({ success: true, result })}\n\n`),
+          );
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         // Detect content safety filter rejections (e.g. Seedream OutputImageSensitiveContentDetected)
@@ -156,9 +165,7 @@ export async function POST(request: NextRequest) {
         } else {
           log.error('Image generation error:', error);
           controller.enqueue(
-            encoder.encode(
-              `data: ${JSON.stringify({ error: message, status: 500 })}\n\n`,
-            ),
+            encoder.encode(`data: ${JSON.stringify({ error: message, status: 500 })}\n\n`),
           );
         }
       } finally {

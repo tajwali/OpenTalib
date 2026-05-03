@@ -69,7 +69,6 @@ export async function generateMediaForOutlines(
  * Batch retry all failed media tasks for a stage.
  */
 export async function retryRemainingMedia(stageId: string): Promise<void> {
-
   const store = useMediaGenerationStore.getState();
   const failedTasks = Object.values(store.tasks).filter(
     (t) => t.stageId === stageId && t.status === 'failed',
@@ -149,7 +148,9 @@ async function generateSingleMedia(
 
     // If resultUrl is empty, it means we have a non-fatal failure (e.g. timeout or rejected prompt)
     if (!resultUrl) {
-      log.warn(`[MediaOrchestrator] Empty result URL for ${req.elementId} - marking as done without image`);
+      log.warn(
+        `[MediaOrchestrator] Empty result URL for ${req.elementId} - marking as done without image`,
+      );
       // Mark as done with empty URL so skeleton disappears and UI shows fallback/nothing instead of error
       useMediaGenerationStore.getState().markDone(req.elementId, '');
       return;
@@ -211,7 +212,9 @@ async function generateSingleMedia(
             const scenesWithUrl = JSON.parse(JSON.stringify(rawScenes)) as typeof rawScenes;
             for (const scene of scenesWithUrl) {
               if (scene.type !== 'slide') continue;
-              const elements = (scene.content as { canvas?: { elements?: Array<{ type: string; src: string }> } }).canvas?.elements;
+              const elements = (
+                scene.content as { canvas?: { elements?: Array<{ type: string; src: string }> } }
+              ).canvas?.elements;
               if (!elements) continue;
               for (const el of elements) {
                 if (el.type === 'image' && el.src === req.elementId) {
@@ -300,7 +303,8 @@ async function callImageApi(
 
     // Result may have url or base64
     const url =
-      data.result?.url || (data.result?.base64 ? `data:image/png;base64,${data.result.base64}` : '');
+      data.result?.url ||
+      (data.result?.base64 ? `data:image/png;base64,${data.result.base64}` : '');
     if (!url) throw new Error('No image URL in response');
     return { url };
   } catch (err) {
@@ -336,7 +340,10 @@ async function callVideoApi(
 
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
-      throw new MediaApiError(data.error || `Video API returned ${response.status}`, data.errorCode);
+      throw new MediaApiError(
+        data.error || `Video API returned ${response.status}`,
+        data.errorCode,
+      );
     }
 
     const data = await response.json();

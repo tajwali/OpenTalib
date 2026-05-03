@@ -227,8 +227,7 @@ export async function POST(req: NextRequest) {
     const CANONICAL_DIRECTIVES: Record<string, string> = {
       'en-US':
         'Teach all content exclusively in English. All titles, descriptions, key points, agent names, and dialogue must be in English.',
-      'zh-CN':
-        '用中文教授所有内容。所有标题、描述、要点、助手名称和对话都必须使用中文。',
+      'zh-CN': '用中文教授所有内容。所有标题、描述、要点、助手名称和对话都必须使用中文。',
     };
     const canonicalDirective = requirements.language
       ? CANONICAL_DIRECTIVES[requirements.language]
@@ -398,7 +397,11 @@ export async function POST(req: NextRequest) {
             // Await short title generated in background, fallback to first scene title or prompt
             const generatedShortTitle = await shortTitlePromise;
             const firstSceneTitle = parsedOutlines[0]?.title;
-            const shortTitle = (generatedShortTitle || firstSceneTitle || requirements.requirement).slice(0, 60);
+            const shortTitle = (
+              generatedShortTitle ||
+              firstSceneTitle ||
+              requirements.requirement
+            ).slice(0, 60);
 
             // Send done event with all outlines
             const finalDirective =

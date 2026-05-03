@@ -1,27 +1,27 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { BookOpen, GraduationCap, Check } from 'lucide-react'
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { BookOpen, GraduationCap, Check } from 'lucide-react';
 
-type Role = 'mature_student' | 'school_student'
+type Role = 'mature_student' | 'school_student';
 
 export default function SignupPage() {
-  const [role, setRole] = useState<Role>('mature_student')
-  const [displayName, setDisplayName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [inviteCode, setInviteCode] = useState('')
-  const [grade, setGrade] = useState('')
-  const [school, setSchool] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const router = useRouter()
+  const [role, setRole] = useState<Role>('mature_student');
+  const [displayName, setDisplayName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [inviteCode, setInviteCode] = useState('');
+  const [grade, setGrade] = useState('');
+  const [school, setSchool] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
+    e.preventDefault();
+    setLoading(true);
+    setError('');
 
     const res = await fetch('/api/auth/signup', {
       method: 'POST',
@@ -35,18 +35,18 @@ export default function SignupPage() {
         grade: role === 'school_student' ? grade.trim() || undefined : undefined,
         school: role === 'school_student' ? school.trim() || undefined : undefined,
       }),
-    })
+    });
 
-    const data = await res.json()
+    const data = await res.json();
 
     if (!res.ok) {
-      setError(data.error || 'Signup failed')
-      setLoading(false)
+      setError(data.error || 'Signup failed');
+      setLoading(false);
     } else {
-      router.push('/')
-      router.refresh()
+      router.push('/');
+      router.refresh();
     }
-  }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -81,7 +81,7 @@ export default function SignupPage() {
               <input
                 type="text"
                 value={displayName}
-                onChange={e => setDisplayName(e.target.value)}
+                onChange={(e) => setDisplayName(e.target.value)}
                 required
                 className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                 placeholder="Your name"
@@ -92,7 +92,7 @@ export default function SignupPage() {
               <input
                 type="email"
                 value={email}
-                onChange={e => setEmail(e.target.value)}
+                onChange={(e) => setEmail(e.target.value)}
                 required
                 className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                 placeholder="you@example.com"
@@ -103,7 +103,7 @@ export default function SignupPage() {
               <input
                 type="password"
                 value={password}
-                onChange={e => setPassword(e.target.value)}
+                onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
                 className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
@@ -116,13 +116,15 @@ export default function SignupPage() {
                   <label className="block text-sm font-medium mb-1">Grade</label>
                   <select
                     value={grade}
-                    onChange={e => setGrade(e.target.value)}
+                    onChange={(e) => setGrade(e.target.value)}
                     required
                     className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                   >
                     <option value="">Select Grade</option>
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(g => (
-                      <option key={g} value={g}>Grade {g}</option>
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((g) => (
+                      <option key={g} value={g}>
+                        Grade {g}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -131,7 +133,7 @@ export default function SignupPage() {
                   <input
                     type="text"
                     value={school}
-                    onChange={e => setSchool(e.target.value)}
+                    onChange={(e) => setSchool(e.target.value)}
                     className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="Your school name"
                   />
@@ -141,7 +143,7 @@ export default function SignupPage() {
                   <input
                     type="text"
                     value={inviteCode}
-                    onChange={e => setInviteCode(e.target.value)}
+                    onChange={(e) => setInviteCode(e.target.value)}
                     required
                     className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="Enter code from your teacher"
@@ -162,30 +164,34 @@ export default function SignupPage() {
 
         <p className="text-center text-sm text-muted-foreground">
           Already have an account?{' '}
-          <a href="/login" className="text-primary hover:underline">Sign in</a>
+          <a href="/login" className="text-primary hover:underline">
+            Sign in
+          </a>
         </p>
       </div>
     </div>
-  )
+  );
 }
 
 function RoleCard({
-  selected, onClick, icon, title, description,
+  selected,
+  onClick,
+  icon,
+  title,
+  description,
 }: {
-  selected: boolean
-  onClick: () => void
-  icon: React.ReactNode
-  title: string
-  description: string
+  selected: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  title: string;
+  description: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={`relative text-left rounded-xl border-2 p-4 transition-all ${
-        selected
-          ? 'border-primary bg-primary/5'
-          : 'border-border bg-card hover:border-primary/40'
+        selected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/40'
       }`}
     >
       {selected && (
@@ -197,5 +203,5 @@ function RoleCard({
       <p className="font-semibold text-sm text-foreground">{title}</p>
       <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{description}</p>
     </button>
-  )
+  );
 }

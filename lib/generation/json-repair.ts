@@ -10,7 +10,7 @@ const log = createLogger('Generation');
 export function parseJsonResponse<T>(response: string): T | null {
   // Pre-processing: Strip thinking/reasoning blocks (e.g. <think>...</think>)
   // Some models (like DeepSeek R1) output reasoning before the actual response.
-  let cleanedResponse = response.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
+  let cleanedResponse = response.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
 
   // targeted pre-fix for "key:value" patterns that jsonrepair might miss
   // 1. Extra quote inside key: "id:"table_001" -> "id": "table_001"
@@ -19,13 +19,16 @@ export function parseJsonResponse<T>(response: string): T | null {
   // 2. CSS-style or unquoted keys with colons: "width:880," or "top:130"
   // Handles: "width:880,", "rowspan: 1,", "top:130"
   // Uses negative lookahead to avoid breaking valid keys like "view:Box": ...
-  cleanedResponse = cleanedResponse.replace(/"(\w+):\s*([^",} ]+)([" ,])?(?!\s*:)/g, (match, key, val, end) => {
-    const trimmedVal = val.trim();
-    const isNum = !isNaN(Number(trimmedVal)) && trimmedVal !== "";
-    const finalVal = isNum ? trimmedVal : `"${trimmedVal}"`;
-    const finalEnd = end === '"' ? '' : (end || '');
-    return `"${key}": ${finalVal}${finalEnd}`;
-  });
+  cleanedResponse = cleanedResponse.replace(
+    /"(\w+):\s*([^",} ]+)([" ,])?(?!\s*:)/g,
+    (match, key, val, end) => {
+      const trimmedVal = val.trim();
+      const isNum = !isNaN(Number(trimmedVal)) && trimmedVal !== '';
+      const finalVal = isNum ? trimmedVal : `"${trimmedVal}"`;
+      const finalEnd = end === '"' ? '' : end || '';
+      return `"${key}": ${finalVal}${finalEnd}`;
+    },
+  );
 
   // 3. Fix colon inside key names (e.g. "view:Box" -> "viewBox")
   cleanedResponse = cleanedResponse.replace(/"view":\s*"Box"":/g, '"viewBox":');
@@ -38,12 +41,25 @@ export function parseJsonResponse<T>(response: string): T | null {
 
   // 5. Fix unquoted string values that contain spaces or special chars (limited to common keys)
   // e.g. "title": Welcome to the Alphabet! -> "title": "Welcome to the Alphabet!"
-  const commonStringKeys = ['title', 'description', 'content', 'prompt', 'teachingObjective', 'message', 'statusMessage'];
-  commonStringKeys.forEach(key => {
+  const commonStringKeys = [
+    'title',
+    'description',
+    'content',
+    'prompt',
+    'teachingObjective',
+    'message',
+    'statusMessage',
+  ];
+  commonStringKeys.forEach((key) => {
     const re = new RegExp(`("${key}":\\s*)([^"{}\\[\\],]+)(?=[,\\n}])`, 'g');
     cleanedResponse = cleanedResponse.replace(re, (match, prefix, val) => {
       const trimmedVal = val.trim();
-      if (trimmedVal === 'true' || trimmedVal === 'false' || trimmedVal === 'null' || !isNaN(Number(trimmedVal))) {
+      if (
+        trimmedVal === 'true' ||
+        trimmedVal === 'false' ||
+        trimmedVal === 'null' ||
+        !isNaN(Number(trimmedVal))
+      ) {
         return match;
       }
       // Check if it's already properly quoted
@@ -55,30 +71,45 @@ export function parseJsonResponse<T>(response: string): T | null {
   // 6. Fix CSS-style properties that broke out of strings: "font_size": "20px;" -> font-size: 20px;
   // This happens when the model fails to escape quotes inside an HTML string, making jsonrepair
   // think the property is a new JSON key.
-  cleanedResponse = cleanedResponse.replace(/"(\w+)[_-](\w+)":\s*"([^"]*)"/g, (match, p1, p2, val) => {
-    // If it looks like a common CSS property (font, text, background, border, margin, padding)
-    const cssPrefixes = ['font', 'text', 'background', 'border', 'margin', 'padding', 'line', 'vertical', 'white'];
-    if (cssPrefixes.includes(p1.toLowerCase())) {
-      return `${p1}-${p2}: ${val}`;
-    }
-    return match;
-  });
+  cleanedResponse = cleanedResponse.replace(
+    /"(\w+)[_-](\w+)":\s*"([^"]*)"/g,
+    (match, p1, p2, val) => {
+      // If it looks like a common CSS property (font, text, background, border, margin, padding)
+      const cssPrefixes = [
+        'font',
+        'text',
+        'background',
+        'border',
+        'margin',
+        'padding',
+        'line',
+        'vertical',
+        'white',
+      ];
+      if (cssPrefixes.includes(p1.toLowerCase())) {
+        return `${p1}-${p2}: ${val}`;
+      }
+      return match;
+    },
+  );
 
   // Strategy 0: Primary - Attempt to repair and parse the entire cleaned response
   try {
     log.debug('--- Strategy 0: Global jsonrepair ---');
     log.debug(`Input length: ${cleanedResponse.length}`);
-    log.debug("[jsonrepair] Strategy 0: Calling global jsonrepair");
+    log.debug('[jsonrepair] Strategy 0: Calling global jsonrepair');
     const repaired = jsonrepair(cleanedResponse);
-    log.debug("[jsonrepair] Strategy 0: global jsonrepair success");
+    log.debug('[jsonrepair] Strategy 0: global jsonrepair success');
     log.debug('jsonrepair success (global)');
     const result = JSON.parse(repaired) as T;
     return result;
   } catch (err) {
-    log.debug(`jsonrepair failed (global). Error: ${err instanceof Error ? err.message : String(err)}`);
+    log.debug(
+      `jsonrepair failed (global). Error: ${err instanceof Error ? err.message : String(err)}`,
+    );
     // If it's a JSON parse error after repair, log a snippet
     if (err instanceof SyntaxError) {
-       log.debug(`SyntaxError at position ${err.message}`);
+      log.debug(`SyntaxError at position ${err.message}`);
     }
   }
 
@@ -114,14 +145,26 @@ export function parseJsonResponse<T>(response: string): T | null {
 
     for (let i = startIndex; i < cleanedResponse.length; i++) {
       const char = cleanedResponse[i];
-      if (escapeNext) { escapeNext = false; continue; }
-      if (char === '\\' && inString) { escapeNext = true; continue; }
-      if (char === '"' && !escapeNext) { inString = !inString; continue; }
+      if (escapeNext) {
+        escapeNext = false;
+        continue;
+      }
+      if (char === '\\' && inString) {
+        escapeNext = true;
+        continue;
+      }
+      if (char === '"' && !escapeNext) {
+        inString = !inString;
+        continue;
+      }
       if (!inString) {
         if (char === '[' || char === '{') depth++;
         else if (char === ']' || char === '}') {
           depth--;
-          if (depth === 0) { endIndex = i; break; }
+          if (depth === 0) {
+            endIndex = i;
+            break;
+          }
         }
       }
     }
@@ -148,13 +191,15 @@ export function parseJsonResponse<T>(response: string): T | null {
 export function tryParseJson<T>(jsonStr: string): T | null {
   try {
     return JSON.parse(jsonStr) as T;
-  } catch { /* continue */ }
+  } catch {
+    /* continue */
+  }
 
   try {
     log.debug('--- Targeted jsonrepair ---');
-    log.debug("[jsonrepair] Targeted: Calling jsonrepair for snippet");
+    log.debug('[jsonrepair] Targeted: Calling jsonrepair for snippet');
     const repaired = jsonrepair(jsonStr);
-    log.debug("[jsonrepair] Targeted: jsonrepair snippet success");
+    log.debug('[jsonrepair] Targeted: jsonrepair snippet success');
     log.debug('jsonrepair success (targeted)');
     return JSON.parse(repaired) as T;
   } catch (err) {
@@ -185,23 +230,27 @@ export function tryParseJson<T>(jsonStr: string): T | null {
       if (openBraces > closeBraces) fixed += '}'.repeat(openBraces - closeBraces);
     }
 
-    log.debug("[jsonrepair] Fixed-Targeted: Calling jsonrepair");
+    log.debug('[jsonrepair] Fixed-Targeted: Calling jsonrepair');
     const repaired = jsonrepair(fixed);
-    log.debug("[jsonrepair] Fixed-Targeted: jsonrepair success");
+    log.debug('[jsonrepair] Fixed-Targeted: jsonrepair success');
     return JSON.parse(repaired) as T;
   } catch {
     try {
       const fixed = jsonStr.replace(/[\x00-\x1F\x7F]/g, (char) => {
         switch (char) {
-          case '\n': return '\\n';
-          case '\r': return '\\r';
-          case '\t': return '\\t';
-          default: return '';
+          case '\n':
+            return '\\n';
+          case '\r':
+            return '\\r';
+          case '\t':
+            return '\\t';
+          default:
+            return '';
         }
       });
-      log.debug("[jsonrepair] Fixed-Targeted: Calling jsonrepair");
+      log.debug('[jsonrepair] Fixed-Targeted: Calling jsonrepair');
       const repaired = jsonrepair(fixed);
-      log.debug("[jsonrepair] Fixed-Targeted: jsonrepair success");
+      log.debug('[jsonrepair] Fixed-Targeted: jsonrepair success');
       return JSON.parse(repaired) as T;
     } catch {
       return null;

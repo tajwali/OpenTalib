@@ -1,35 +1,39 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { requireAuth, requireRole } from '@/lib/server/require-role'
-import { getSupabaseAdmin } from '@/lib/server/supabase-admin'
+import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth, requireRole } from '@/lib/server/require-role';
+import { getSupabaseAdmin } from '@/lib/server/supabase-admin';
 
 export async function GET() {
   try {
-    const auth = await requireAuth()
-    if ('error' in auth) return auth.error
+    const auth = await requireAuth();
+    if ('error' in auth) return auth.error;
 
-    const admin = getSupabaseAdmin()
+    const admin = getSupabaseAdmin();
     const { data, error } = await admin
       .from('subjects')
       .select('id, name, icon, description, is_default')
       .order('is_default', { ascending: false })
-      .order('name', { ascending: true })
+      .order('name', { ascending: true });
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json(data ?? [])
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(data ?? []);
   } catch (err) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : 'Internal error' }, { status: 500 })
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'Internal error' },
+      { status: 500 },
+    );
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const auth = await requireRole(['admin', 'teacher', 'mature_student'])
-    if ('error' in auth) return auth.error
+    const auth = await requireRole(['admin', 'teacher', 'mature_student']);
+    if ('error' in auth) return auth.error;
 
-    const body = await req.json() as { name?: string; icon?: string; description?: string }
-    if (!body.name?.trim()) return NextResponse.json({ error: 'name is required' }, { status: 400 })
+    const body = (await req.json()) as { name?: string; icon?: string; description?: string };
+    if (!body.name?.trim())
+      return NextResponse.json({ error: 'name is required' }, { status: 400 });
 
-    const admin = getSupabaseAdmin()
+    const admin = getSupabaseAdmin();
     const { data, error } = await admin
       .from('subjects')
       .insert({
@@ -40,42 +44,48 @@ export async function POST(req: NextRequest) {
         is_default: false,
       })
       .select('id, name, icon, description, is_default')
-      .single()
+      .single();
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json(data, { status: 201 })
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json(data, { status: 201 });
   } catch (err) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : 'Internal error' }, { status: 500 })
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'Internal error' },
+      { status: 500 },
+    );
   }
 }
 
 export async function DELETE(req: NextRequest) {
   try {
-    const auth = await requireRole(['admin'])
-    if ('error' in auth) return auth.error
+    const auth = await requireRole(['admin']);
+    if ('error' in auth) return auth.error;
 
-    const id = new URL(req.url).searchParams.get('id')
-    if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 })
+    const id = new URL(req.url).searchParams.get('id');
+    if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 });
 
-    const admin = getSupabaseAdmin()
+    const admin = getSupabaseAdmin();
     const { data: subject } = await admin
       .from('subjects')
       .select('is_default')
       .eq('id', id)
-      .single()
+      .single();
 
     if (subject?.is_default) {
-      return NextResponse.json({ error: 'Cannot delete default subjects' }, { status: 400 })
+      return NextResponse.json({ error: 'Cannot delete default subjects' }, { status: 400 });
     }
 
     // Null out classrooms referencing this subject
-    await admin.from('classrooms').update({ subject_id: null }).eq('subject_id', id)
+    await admin.from('classrooms').update({ subject_id: null }).eq('subject_id', id);
 
-    const { error } = await admin.from('subjects').delete().eq('id', id)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    const { error } = await admin.from('subjects').delete().eq('id', id);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    return NextResponse.json({ ok: true })
+    return NextResponse.json({ ok: true });
   } catch (err) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : 'Internal error' }, { status: 500 })
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'Internal error' },
+      { status: 500 },
+    );
   }
 }

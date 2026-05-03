@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   try {
     const text = await req.text();
     const rawBody = (text ? JSON.parse(text) : {}) as Partial<GenerateClassroomInput>;
-    
+
     const modelParams: ModelParams = {
       modelString: req.headers.get('x-model') || undefined,
       apiKey: req.headers.get('x-api-key') || undefined,
@@ -46,7 +46,10 @@ export async function POST(req: NextRequest) {
     // Auth check - get user from session
     let userId: string | undefined;
     const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     log.info('Auth check - user:', user?.id ?? 'null', 'error:', authError?.message ?? 'none');
 
@@ -59,7 +62,12 @@ export async function POST(req: NextRequest) {
         .eq('id', user.id)
         .single();
 
-      log.info('Profile check - role:', profile?.role ?? 'null', 'error:', profileError?.message ?? 'none');
+      log.info(
+        'Profile check - role:',
+        profile?.role ?? 'null',
+        'error:',
+        profileError?.message ?? 'none',
+      );
 
       // Block school_student explicitly
       if (profile?.role === 'school_student') {
