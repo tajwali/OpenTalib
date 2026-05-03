@@ -21,6 +21,9 @@ interface AssignedClassroom {
   assigned_at: string;
   completed?: boolean;
   grade: number | null;
+  subject_id: string | null;
+  subject_icon: string | null;
+  subject_name: string | null;
 }
 
 interface Stats {
@@ -251,15 +254,11 @@ export default function SchoolStudentDashboard({ userEmail, displayName }: Props
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {classrooms
-                .filter(
-                  (c) =>
-                    selectedSubjectId === 'all' ||
-                    (c as Record<string, unknown>).subject_id === selectedSubjectId,
-                )
+                .filter((c) => selectedSubjectId === 'all' || c.subject_id === selectedSubjectId)
                 .map((c) => {
                   const displayTitle = (c.short_title || c.title || '').slice(0, 60);
-                  const subjectIcon = (c as Record<string, unknown>).subject_icon;
-                  const subjectName = (c as Record<string, unknown>).subject_name;
+                  const subjectIcon = c.subject_icon;
+                  const subjectName = c.subject_name;
                   return (
                     <button
                       key={c.id}
@@ -320,9 +319,7 @@ export default function SchoolStudentDashboard({ userEmail, displayName }: Props
             </div>
           )}
           {classrooms.filter(
-            (c) =>
-              selectedSubjectId === 'all' ||
-              (c as Record<string, unknown>).subject_id === selectedSubjectId,
+            (c) => selectedSubjectId === 'all' || c.subject_id === selectedSubjectId,
           ).length === 0 &&
             classrooms.length > 0 && (
               <div className="text-center py-12 border border-dashed border-border rounded-xl bg-muted/20">

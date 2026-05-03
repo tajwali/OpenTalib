@@ -38,7 +38,12 @@ export async function GET() {
           short_title,
           topic,
           status,
-          grade
+          grade,
+          subject_id,
+          subjects (
+            name,
+            icon
+          )
         )
       `,
       )
@@ -55,43 +60,55 @@ export async function GET() {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    const result = (data ?? [])
-      .filter(
-        (row: {
-          classrooms: { grade?: number } | null;
-          classroom_id: string;
-          assigned_at: string;
-          assigned_by: string;
-        }) => {
-          if (!studentGrade) return true;
-          const classroomGrade = row.classrooms?.grade;
-          return !classroomGrade || classroomGrade === studentGrade;
-        },
-      )
-      .map(
-        (row: {
-          classrooms: {
-            id?: string;
-            title?: string;
-            short_title?: string;
-            topic?: string;
-            status?: string;
-            grade?: number;
-          } | null;
-          classroom_id: string;
-          assigned_at: string;
-          assigned_by: string;
-        }) => ({
-          id: row.classrooms?.id ?? row.classroom_id,
-          title: row.classrooms?.title ?? '',
-          short_title: row.classrooms?.short_title ?? null,
-          topic: row.classrooms?.topic ?? '',
-          status: row.classrooms?.status ?? '',
+    // Define the shape of the raw database row based on Supabase join behavior
+    interface RawAssignmentRow {
+      classroom_id: string;
+      assigned_at: string;
+      assigned_by: string;
+      classrooms: Array<{
+        id: string;
+        title: string;
+        short_title: string | null;
+        topic: string;
+        status: string;
+        grade: number | null;
+        subject_id: string | null;
+        subjects:
+          | Array<{
+              name: string;
+              icon: string;
+            }>
+          | { name: string; icon: string }
+          | null;
+      }> | null;
+    }
+
+    const result = (data as unknown as RawAssignmentRow[])
+      .filter((row) => {
+        if (!studentGrade) return true;
+        const classroom = Array.isArray(row.classrooms) ? row.classrooms[0] : row.classrooms;
+        const classroomGrade = classroom?.grade;
+        return !classroomGrade || classroomGrade === studentGrade;
+      })
+      .map((row) => {
+        const classroom = Array.isArray(row.classrooms) ? row.classrooms[0] : row.classrooms;
+        const subjectsData = classroom?.subjects;
+        const subject = Array.isArray(subjectsData) ? subjectsData[0] : subjectsData;
+
+        return {
+          id: classroom?.id ?? row.classroom_id,
+          title: classroom?.title ?? '',
+          short_title: classroom?.short_title ?? null,
+          topic: classroom?.topic ?? '',
+          status: classroom?.status ?? '',
           assigned_at: row.assigned_at,
           assigned_by: row.assigned_by,
-          grade: row.classrooms?.grade ?? null,
-        }),
-      );
+          grade: classroom?.grade ?? null,
+          subject_id: classroom?.subject_id ?? null,
+          subject_name: subject?.name ?? null,
+          subject_icon: subject?.icon ?? null,
+        };
+      });
 
     return NextResponse.json(result);
   } catch (err) {

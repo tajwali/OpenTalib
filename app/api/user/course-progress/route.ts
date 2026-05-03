@@ -148,7 +148,9 @@ async function evaluateCompletion(
   if (totalScenes === 0) return false;
 
   // Count quiz scenes in classroom.scenes where scene.content.type === 'quiz'
-  const quizScenes = scenes.filter((s) => s.type === 'quiz' || s.content?.type === 'quiz');
+  const quizScenes = scenes.filter(
+    (s) => (s.type === 'quiz' || s.content?.type === 'quiz') && s.id,
+  ) as { id: string }[];
   const totalQuizzes = quizScenes.length;
 
   if (totalQuizzes > 0) {
