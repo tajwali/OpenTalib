@@ -227,7 +227,7 @@ export default function MatureStudentDashboard({ userEmail, displayName }: Props
       <header className="border-b border-border bg-card">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-foreground">OpenMAIC</h1>
+            <h1 className="text-xl font-bold text-foreground">OpenTalib</h1>
             <p className="text-sm text-muted-foreground">
               {displayName ?? userEmail ?? 'My Dashboard'}
             </p>

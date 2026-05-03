@@ -1,10 +1,10 @@
 # Student Manual
 
-Welcome to OpenMAIC! This guide will help you navigate your AI-powered learning journey.
+Welcome to **OpenTalib**! This guide will help you navigate your AI-powered learning journey.
 
 ## 1. Getting Started
 
-There are two types of students in OpenMAIC:
+There are two types of students in OpenTalib:
 
 ### School Students
 If you are part of a school or a teacher's class:

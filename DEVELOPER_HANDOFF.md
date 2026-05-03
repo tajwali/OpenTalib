@@ -9,7 +9,7 @@
 
 ## Overview
 
-This branch adds full multi-user support to OpenMAIC: Supabase authentication, role-based dashboards (student / teacher / admin), course persistence, exam generation, and a series of production stability fixes discovered during deployment on a self-hosted Supabase + Cloudflare tunnel setup.
+This branch adds full multi-user support to **OpenTalib**: Supabase authentication, role-based dashboards (student / teacher / admin), course persistence, exam generation, and a series of production stability fixes discovered during deployment on a self-hosted Supabase + Cloudflare tunnel setup.
 
 ---
 
@@ -235,7 +235,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY # Anon key for client-side auth
 ```bash
 npm run build
 cp .env.local .next/standalone/.env.local   # CRITICAL — always do this
-/opt/deploy-prod.sh                          # or: systemctl restart openmaic
+/opt/deploy-prod.sh                          # or: systemctl restart opentalib
 ```
 
 ---

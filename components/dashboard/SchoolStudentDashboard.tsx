@@ -158,7 +158,7 @@ export default function SchoolStudentDashboard({ userEmail, displayName }: Props
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-foreground">OpenMAIC</h1>
+              <h1 className="text-xl font-bold text-foreground">OpenTalib</h1>
               {studentGrade && (
                 <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider">
                   Grade {studentGrade}

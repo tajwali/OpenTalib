@@ -36,7 +36,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="w-full max-w-md p-8 space-y-6 bg-card rounded-xl border border-border shadow-lg">
         <div className="text-center">
-          <h1 className="text-2xl font-bold">Welcome to OpenMAIC</h1>
+          <h1 className="text-2xl font-bold">Welcome to OpenTalib</h1>
           <p className="text-muted-foreground mt-1">Sign in to your account</p>
         </div>
         <form onSubmit={handleLogin} className="space-y-4">

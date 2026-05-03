@@ -4,7 +4,7 @@ As a teacher, you are the conductor of the AI classroom. You can generate custom
 
 ## 1. Managing Students
 
-OpenMAIC 2.0 uses an **Invite Code** system to link students to your account.
+**OpenTalib** uses an **Invite Code** system to link students to your account.
 
 ### Onboarding Students
 1. Log in to your Teacher Dashboard.
@@ -17,7 +17,7 @@ You can edit student display names, update their grade level, or reset their pas
 
 ## 2. Generating Courses
 
-OpenMAIC allows you to create immersive, multi-agent courses from simple prompts or PDF documents.
+OpenTalib allows you to create immersive, multi-agent courses from simple prompts or PDF documents.
 
 1. Click **New Course** (or go to the **Generate** page).
 2. **Topic:** Enter what you want to teach (e.g., "The Solar System for 7th Grade").

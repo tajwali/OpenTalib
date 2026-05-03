@@ -1,6 +1,6 @@
 # API Documentation
 
-This document describes the API endpoints for OpenMAIC 2.0.
+This document describes the API endpoints for **OpenTalib**.
 
 ## Authentication
 

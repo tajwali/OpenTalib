@@ -53,7 +53,7 @@ export default function SignupPage() {
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
           <h1 className="text-2xl font-bold">Create Account</h1>
-          <p className="text-muted-foreground mt-1">Join OpenMAIC today</p>
+          <p className="text-muted-foreground mt-1">Join OpenTalib today</p>
         </div>
 
         {/* Role Selection */}
