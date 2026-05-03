@@ -56,21 +56,42 @@ export async function GET() {
     }
 
     const result = (data ?? [])
-      .filter((row: Record<string, unknown>) => {
-        if (!studentGrade) return true;
-        const classroomGrade = row.classrooms?.grade;
-        return !classroomGrade || classroomGrade === studentGrade;
-      })
-      .map((row: Record<string, unknown>) => ({
-        id: row.classrooms?.id ?? row.classroom_id,
-        title: row.classrooms?.title ?? '',
-        short_title: row.classrooms?.short_title ?? null,
-        topic: row.classrooms?.topic ?? '',
-        status: row.classrooms?.status ?? '',
-        assigned_at: row.assigned_at,
-        assigned_by: row.assigned_by,
-        grade: row.classrooms?.grade ?? null,
-      }));
+      .filter(
+        (row: {
+          classrooms: { grade?: number } | null;
+          classroom_id: string;
+          assigned_at: string;
+          assigned_by: string;
+        }) => {
+          if (!studentGrade) return true;
+          const classroomGrade = row.classrooms?.grade;
+          return !classroomGrade || classroomGrade === studentGrade;
+        },
+      )
+      .map(
+        (row: {
+          classrooms: {
+            id?: string;
+            title?: string;
+            short_title?: string;
+            topic?: string;
+            status?: string;
+            grade?: number;
+          } | null;
+          classroom_id: string;
+          assigned_at: string;
+          assigned_by: string;
+        }) => ({
+          id: row.classrooms?.id ?? row.classroom_id,
+          title: row.classrooms?.title ?? '',
+          short_title: row.classrooms?.short_title ?? null,
+          topic: row.classrooms?.topic ?? '',
+          status: row.classrooms?.status ?? '',
+          assigned_at: row.assigned_at,
+          assigned_by: row.assigned_by,
+          grade: row.classrooms?.grade ?? null,
+        }),
+      );
 
     return NextResponse.json(result);
   } catch (err) {

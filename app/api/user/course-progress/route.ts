@@ -142,7 +142,8 @@ async function evaluateCompletion(
     .single();
   if (!classroom) return false;
 
-  const scenes = (classroom.scenes as unknown[]) || [];
+  const scenes =
+    (classroom.scenes as { type?: string; content?: { type?: string }; id?: string }[]) || [];
   const totalScenes = scenes.length;
   if (totalScenes === 0) return false;
 
@@ -158,9 +159,7 @@ async function evaluateCompletion(
       .eq('user_id', userId)
       .eq('classroom_id', classroomId);
 
-    const completedQuizIds = new Set(
-      (results || []).map((r: Record<string, unknown>) => r.scene_id),
-    );
+    const completedQuizIds = new Set((results || []).map((r: { scene_id: string }) => r.scene_id));
     // Only set completed = true if completedQuizzes >= totalQuizzes && totalQuizzes > 0
     return quizScenes.every((s) => completedQuizIds.has(s.id));
   } else {
