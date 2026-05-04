@@ -104,14 +104,22 @@ export async function POST(request: Request) {
 
   if (data.user) {
     const admin = getSupabaseAdmin();
+
+    // Check if this is the first user
+    const { count } = await admin
+      .from('user_profiles')
+      .select('*', { count: 'exact', head: true });
+    const isFirstUser = count === 0;
+    const assignedRole = isFirstUser ? 'admin' : finalRole;
+
     const profileData: Record<string, unknown> = {
       id: data.user.id,
       display_name: displayName ?? '',
-      role: finalRole,
+      role: assignedRole,
       ...(teacherId ? { teacher_id: teacherId } : {}),
     };
 
-    if (finalRole === 'school_student') {
+    if (finalRole === 'school_student' && !isFirstUser) {
       if (grade) {
         profileData.grade = parseInt(String(grade)) || null;
       }
@@ -121,6 +129,8 @@ export async function POST(request: Request) {
     }
 
     await admin.from('user_profiles').insert(profileData);
+
+    return NextResponse.json({ success: true, user: data.user, isFirstUser });
   }
 
   return NextResponse.json({ success: true, user: data.user });

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
@@ -8,7 +8,15 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isFirstUser, setIsFirstUser] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    fetch('/api/setup/status')
+      .then((res) => res.json())
+      .then((data) => setIsFirstUser(data.isFirstUser))
+      .catch(() => {});
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,6 +79,17 @@ export default function LoginPage() {
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
+        {isFirstUser && (
+          <div className="bg-muted/50 border border-border rounded-lg p-3 text-center">
+            <p className="text-xs text-muted-foreground">
+              New installation?{' '}
+              <a href="/signup" className="text-primary hover:underline font-medium">
+                Sign up
+              </a>{' '}
+              — the first account becomes admin.
+            </p>
+          </div>
+        )}
         <p className="text-center text-sm text-muted-foreground">
           Don&apos;t have an account?{' '}
           <a href="/signup" className="text-primary hover:underline">

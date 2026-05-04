@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { BookOpen, GraduationCap, Check } from 'lucide-react';
 
@@ -16,7 +16,15 @@ export default function SignupPage() {
   const [school, setSchool] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isFirstUser, setIsFirstUser] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    fetch('/api/setup/status')
+      .then((res) => res.json())
+      .then((data) => setIsFirstUser(data.isFirstUser))
+      .catch(() => {});
+  }, []);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,6 +59,17 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-6">
+        {isFirstUser && (
+          <div className="bg-indigo-600 text-white rounded-xl p-4 flex items-start gap-3 shadow-md">
+            <div className="text-2xl">🎉</div>
+            <div>
+              <p className="font-bold">Welcome to OpenTalib! You are the first user.</p>
+              <p className="text-sm text-indigo-100 mt-0.5">
+                Your account will automatically be set as Administrator.
+              </p>
+            </div>
+          </div>
+        )}
         <div className="text-center">
           <h1 className="text-2xl font-bold">Create Account</h1>
           <p className="text-muted-foreground mt-1">Join OpenTalib today</p>
