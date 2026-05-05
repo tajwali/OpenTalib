@@ -55,7 +55,7 @@ async function submitTask(
 
   const model = config.model || 'MiniMax-Hailuo-2.3';
   const duration = options.duration || 6;
-  // Map OpenMAIC resolution to MiniMax format
+  // Map OpenTalib resolution to MiniMax format
   const resolutionMap: Record<string, string> = {
     '720p': '720P',
     '1080p': '1080P',

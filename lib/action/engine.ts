@@ -14,7 +14,6 @@ import { createStageAPI } from '@/lib/api/stage-api';
 import { useCanvasStore } from '@/lib/store/canvas';
 import { useWhiteboardHistoryStore } from '@/lib/store/whiteboard-history';
 import { useMediaGenerationStore, isMediaPlaceholder } from '@/lib/store/media-generation';
-import { getClientTranslation } from '@/lib/i18n';
 import type { AudioPlayer } from '@/lib/utils/audio-player';
 import type {
   Action,

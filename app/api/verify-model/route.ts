@@ -7,7 +7,13 @@ const log = createLogger('Verify Model');
 
 export async function POST(req: NextRequest) {
   try {
-    const { apiKey, baseUrl, model, providerType, requiresApiKey } = await req.json();
+    const {
+      apiKey,
+      baseUrl,
+      model,
+      providerType,
+      requiresApiKey: _requiresApiKey,
+    } = await req.json();
 
     if (!model) {
       return apiError('MISSING_REQUIRED_FIELD', 400, 'Model name is required');

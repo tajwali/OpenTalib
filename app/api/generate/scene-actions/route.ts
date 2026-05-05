@@ -24,7 +24,6 @@ import type {
 } from '@/lib/types/generation';
 import type { SpeechAction } from '@/lib/types/action';
 import { createLogger } from '@/lib/logger';
-import { apiError, apiSuccess } from '@/lib/server/api-response';
 import { resolveModelFromHeaders } from '@/lib/server/resolve-model';
 
 const log = createLogger('Scene Actions API');
@@ -178,12 +177,12 @@ export async function POST(req: NextRequest) {
 
         startKeepAlive();
 
-        const actions = await generateSceneActions(
-          outline,
-          content,
-          aiCall,
-          { ctx, agents, userProfile, languageDirective },
-        );
+        const actions = await generateSceneActions(outline, content, aiCall, {
+          ctx,
+          agents,
+          userProfile,
+          languageDirective,
+        });
 
         stopKeepAlive();
 
@@ -249,4 +248,3 @@ export async function POST(req: NextRequest) {
     },
   });
 }
-

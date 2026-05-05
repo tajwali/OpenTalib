@@ -23,9 +23,7 @@ export async function generateCourseTitle(
 ): Promise<string | null> {
   try {
     const topTitles = sceneOutlineTitles.slice(0, 3).join('; ');
-    const context = topTitles
-      ? `Scene titles: "${topTitles}"`
-      : '';
+    const context = topTitles ? `Scene titles: "${topTitles}"` : '';
 
     const { model: languageModel, modelString } = await resolveModel({});
     const fallbackModels = await resolveFallbackModels(modelString);
@@ -47,12 +45,18 @@ export async function generateCourseTitle(
       fallbackModels,
     );
 
-    const title = result.text.trim().replace(/^["']|["']$/g, '').slice(0, 100);
+    const title = result.text
+      .trim()
+      .replace(/^["']|["']$/g, '')
+      .slice(0, 100);
     if (title.length < 3) return null;
     log.info(`Generated course title: "${title}"`);
     return title;
   } catch (err) {
-    log.warn('generateCourseTitle failed, using fallback:', err instanceof Error ? err.message : String(err));
+    log.warn(
+      'generateCourseTitle failed, using fallback:',
+      err instanceof Error ? err.message : String(err),
+    );
     return null;
   }
 }
@@ -80,7 +84,10 @@ export async function generateShortTitle(requirement: string): Promise<string | 
       fallbackModels,
     );
 
-    const title = result.text.trim().replace(/^["']|["']$/g, '').slice(0, 60);
+    const title = result.text
+      .trim()
+      .replace(/^["']|["']$/g, '')
+      .slice(0, 60);
     if (title.length < 3) return null;
     log.info(`Generated short course title: "${title}"`);
     return title;

@@ -151,7 +151,7 @@ export function useDiscussionTTS({ enabled, agents, onAudioStateChange }: Discus
       // Don't send serverBaseUrl to the API — it's a private/internal address
       // configured server-side. The server resolves it from env vars via
       // resolveTTSBaseUrl(). Only send baseUrl when there is no server-configured URL.
-      const clientBaseUrl = providerConfig?.serverBaseUrl ? undefined : providerConfig?.baseUrl;
+      const _clientBaseUrl = providerConfig?.serverBaseUrl ? undefined : providerConfig?.baseUrl;
       const res = await fetch('/api/generate/tts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -163,7 +163,9 @@ export function useDiscussionTTS({ enabled, agents, onAudioStateChange }: Discus
           ttsVoice: item.voiceId,
           ttsSpeed: ttsSpeed,
           ttsApiKey: providerConfig?.serverBaseUrl ? undefined : providerConfig?.apiKey,
-          ttsBaseUrl: providerConfig?.serverBaseUrl ? undefined : (providerConfig?.baseUrl || providerConfig?.customDefaultBaseUrl),
+          ttsBaseUrl: providerConfig?.serverBaseUrl
+            ? undefined
+            : providerConfig?.baseUrl || providerConfig?.customDefaultBaseUrl,
         }),
         signal: controller.signal,
       });

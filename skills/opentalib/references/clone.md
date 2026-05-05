@@ -2,11 +2,11 @@
 
 ## Goal
 
-Establish which OpenMAIC checkout will be used for setup and runtime actions.
+Establish which OpenTalib checkout will be used for setup and runtime actions.
 
 ## Procedure
 
-1. Check whether OpenMAIC already exists locally.
+1. Check whether OpenTalib already exists locally.
 2. If a checkout exists, show the path and ask whether to reuse it.
 3. If no checkout exists, propose cloning the repo and ask for confirmation.
 4. After clone, confirm dependency installation separately.
@@ -21,8 +21,8 @@ Establish which OpenMAIC checkout will be used for setup and runtime actions.
 Clone:
 
 ```bash
-git clone https://github.com/THU-MAIC/OpenMAIC.git
-cd OpenMAIC
+git clone https://github.com/THU-MAIC/OpenTalib.git
+cd OpenTalib
 ```
 
 Install dependencies:

@@ -1,42 +1,50 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  const router = useRouter()
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [isFirstUser, setIsFirstUser] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    fetch('/api/setup/status')
+      .then((res) => res.json())
+      .then((data) => setIsFirstUser(data.isFirstUser))
+      .catch(() => {});
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
+    e.preventDefault();
+    setLoading(true);
+    setError('');
 
     const res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
-    })
+    });
 
-    const data = await res.json()
+    const data = await res.json();
 
     if (!res.ok) {
-      setError(data.error || 'Login failed')
-      setLoading(false)
+      setError(data.error || 'Login failed');
+      setLoading(false);
     } else {
-      router.push('/')
-      router.refresh()
+      router.push('/');
+      router.refresh();
     }
-  }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="w-full max-w-md p-8 space-y-6 bg-card rounded-xl border border-border shadow-lg">
         <div className="text-center">
-          <h1 className="text-2xl font-bold">Welcome to OpenMAIC</h1>
+          <h1 className="text-2xl font-bold">Welcome to OpenTalib</h1>
           <p className="text-muted-foreground mt-1">Sign in to your account</p>
         </div>
         <form onSubmit={handleLogin} className="space-y-4">
@@ -45,7 +53,7 @@ export default function LoginPage() {
             <input
               type="email"
               value={email}
-              onChange={e => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value)}
               required
               className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="you@example.com"
@@ -56,7 +64,7 @@ export default function LoginPage() {
             <input
               type="password"
               value={password}
-              onChange={e => setPassword(e.target.value)}
+              onChange={(e) => setPassword(e.target.value)}
               required
               className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="••••••••"
@@ -71,11 +79,24 @@ export default function LoginPage() {
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
+        {isFirstUser && (
+          <div className="bg-muted/50 border border-border rounded-lg p-3 text-center">
+            <p className="text-xs text-muted-foreground">
+              New installation?{' '}
+              <a href="/signup" className="text-primary hover:underline font-medium">
+                Sign up
+              </a>{' '}
+              — the first account becomes admin.
+            </p>
+          </div>
+        )}
         <p className="text-center text-sm text-muted-foreground">
           Don&apos;t have an account?{' '}
-          <a href="/signup" className="text-primary hover:underline">Sign up</a>
+          <a href="/signup" className="text-primary hover:underline">
+            Sign up
+          </a>
         </p>
       </div>
     </div>
-  )
+  );
 }

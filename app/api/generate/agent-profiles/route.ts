@@ -9,9 +9,8 @@ import { NextRequest } from 'next/server';
 import { nanoid } from 'nanoid';
 import { callLLM } from '@/lib/ai/llm';
 import { createLogger } from '@/lib/logger';
-import { apiError, apiSuccess } from '@/lib/server/api-response';
 import { resolveModelFromHeaders } from '@/lib/server/resolve-model';
-import { AGENT_COLOR_PALETTE, AGENT_DEFAULT_AVATARS } from '@/lib/constants/agent-defaults';
+import { AGENT_COLOR_PALETTE } from '@/lib/constants/agent-defaults';
 
 const log = createLogger('Agent Profiles API');
 
@@ -271,7 +270,9 @@ Return a JSON object with this exact structure:
 
         log.info(`Successfully generated ${agents.length} agent profiles for "${stageInfo.name}"`);
 
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ success: true, agents })}\n\n`));
+        controller.enqueue(
+          encoder.encode(`data: ${JSON.stringify({ success: true, agents })}\n\n`),
+        );
       } catch (error) {
         log.error('Agent profiles generation error:', error);
         controller.enqueue(

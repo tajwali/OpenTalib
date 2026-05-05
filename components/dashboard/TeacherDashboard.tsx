@@ -1,151 +1,202 @@
-'use client'
+'use client';
 
-import { useEffect, useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
-import { Users, BookOpen, ClipboardList, LogOut, Copy, Check, RefreshCw, X, ChevronRight, FileText, BarChart2, ChevronDown, UserCircle, Pencil, Trash2 } from 'lucide-react'
+import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import {
+  Users,
+  BookOpen,
+  ClipboardList,
+  LogOut,
+  Copy,
+  Check,
+  RefreshCw,
+  X,
+  ChevronRight,
+  FileText,
+  BarChart2,
+  ChevronDown,
+  UserCircle,
+  Pencil,
+  Trash2,
+} from 'lucide-react';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 interface Student {
-  id: string
-  display_name: string
-  grade: string | null
-  school: string | null
-  coursesAssigned: number
-  lastQuizScore: number | null
-  lastAccessed: string | null
+  id: string;
+  display_name: string;
+  grade: string | null;
+  school: string | null;
+  coursesAssigned: number;
+  lastQuizScore: number | null;
+  lastAccessed: string | null;
 }
 
 interface Course {
-  id: string
-  title: string
-  short_title: string | null
-  topic: string
-  status: string
-  created_at: string
-  grade: string | null
-  subject_id: string | null
-  subject_name: string | null
-  subject_icon: string | null
+  id: string;
+  title: string;
+  short_title: string | null;
+  topic: string;
+  status: string;
+  created_at: string;
+  grade: string | null;
+  subject_id: string | null;
+  subject_name: string | null;
+  subject_icon: string | null;
 }
 
 interface Subject {
-  id: string
-  name: string
-  icon: string
+  id: string;
+  name: string;
+  icon: string;
 }
 
 interface Assignment {
-  id: string
-  classroom_id: string
-  classroom_title: string
-  student_id: string
-  student_name: string
-  assigned_at: string
+  id: string;
+  classroom_id: string;
+  classroom_title: string;
+  student_id: string;
+  student_name: string;
+  assigned_at: string;
 }
 
 interface StudentProgress {
-  student: { id: string; display_name: string; grade: string | null; school: string | null }
-  stats: { quizzesTaken: number; avgScore: number | null }
-  assignments: { classroom_id: string; classroom_title: string; assigned_at: string; completed: boolean; last_accessed: string | null }[]
-  recentQuizzes: { classroom_title: string; score: number; total: number; percentage: number; taken_at: string }[]
+  student: { id: string; display_name: string; grade: string | null; school: string | null };
+  stats: { quizzesTaken: number; avgScore: number | null };
+  assignments: {
+    classroom_id: string;
+    classroom_title: string;
+    assigned_at: string;
+    completed: boolean;
+    last_accessed: string | null;
+  }[];
+  recentQuizzes: {
+    classroom_title: string;
+    score: number;
+    total: number;
+    percentage: number;
+    taken_at: string;
+  }[];
 }
 
 interface TeacherStats {
-  totalStudents: number
-  totalCourses: number
-  totalAssignments: number
-  avgQuizScore: number
+  totalStudents: number;
+  totalCourses: number;
+  totalAssignments: number;
+  avgQuizScore: number;
   studentProgress: {
-    id: string
-    name: string
-    grade: string | null
-    coursesAssigned: number
-    coursesCompleted: number
-    lastQuizScore: number | null
-    lastActive: string | null
-  }[]
-  popularSubjects: { name: string; icon: string; courseCount: number }[]
-  recentActivity: { type: string; student: string; course_title: string; score: number; date: string }[]
+    id: string;
+    name: string;
+    grade: string | null;
+    coursesAssigned: number;
+    coursesCompleted: number;
+    lastQuizScore: number | null;
+    lastActive: string | null;
+  }[];
+  popularSubjects: { name: string; icon: string; courseCount: number }[];
+  recentActivity: {
+    type: string;
+    student: string;
+    course_title: string;
+    score: number;
+    date: string;
+  }[];
 }
 
-type Tab = 'students' | 'courses' | 'assignments' | 'exam-results' | 'analytics'
+type Tab = 'students' | 'courses' | 'assignments' | 'exam-results' | 'analytics';
 
 interface ExamResultRow {
-  student_name: string
-  score: number
-  total_questions: number
-  percentage: number
-  completed_at: string | null
+  student_name: string;
+  score: number;
+  total_questions: number;
+  percentage: number;
+  completed_at: string | null;
 }
 
 interface ExamWithResults {
-  exam_id: string
-  exam_title: string
-  results: ExamResultRow[]
+  exam_id: string;
+  exam_title: string;
+  results: ExamResultRow[];
 }
 
 interface Props {
-  userEmail?: string
-  displayName?: string
+  userEmail?: string;
+  displayName?: string;
 }
 
 // ─── Main Component ──────────────────────────────────────────────────────────
 
 export default function TeacherDashboard({ userEmail, displayName }: Props) {
-  const router = useRouter()
-  const [tab, setTab] = useState<Tab>('students')
-  const [inviteCode, setInviteCode] = useState<string | null>(null)
-  const [copied, setCopied] = useState(false)
-  const [subjects, setSubjects] = useState<Subject[]>([])
-  const [selectedSubjectId, setSelectedSubjectId] = useState<string>('all')
-  const [students, setStudents] = useState<Student[]>([])
-  const [courses, setCourses] = useState<Course[]>([])
-  const [assignments, setAssignments] = useState<Assignment[]>([])
-  const [loading, setLoading] = useState(true)
-  const [selectedStudent, setSelectedStudent] = useState<StudentProgress | null>(null)
-  const [assignModal, setAssignModal] = useState<Course | null>(null)
-  const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set())
-  const [assigning, setAssigning] = useState(false)
-  const [assignResult, setAssignResult] = useState<string | null>(null)
-  const [examResults, setExamResults] = useState<ExamWithResults[]>([])
-  const [examResultsLoading, setExamResultsLoading] = useState(false)
-  const [expandedExams, setExpandedExams] = useState<Set<string>>(new Set())
-  const [unassigningId, setUnassigningId] = useState<string | null>(null)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [deleteConfirmCourse, setDeleteConfirmCourse] = useState<Course | null>(null)
-  const [teacherStats, setTeacherStats] = useState<TeacherStats | null>(null)
+  const router = useRouter();
+  const [tab, setTab] = useState<Tab>('students');
+  const [inviteCode, setInviteCode] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string>('all');
+  const [students, setStudents] = useState<Student[]>([]);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedStudent, setSelectedStudent] = useState<StudentProgress | null>(null);
+  const [assignModal, setAssignModal] = useState<Course | null>(null);
+  const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set());
+  const [assigning, setAssigning] = useState(false);
+  const [assignResult, setAssignResult] = useState<string | null>(null);
+  const [examResults, setExamResults] = useState<ExamWithResults[]>([]);
+  const [examResultsLoading, setExamResultsLoading] = useState(false);
+  const [expandedExams, setExpandedExams] = useState<Set<string>>(new Set());
+  const [unassigningId, setUnassigningId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteConfirmCourse, setDeleteConfirmCourse] = useState<Course | null>(null);
+  const [teacherStats, setTeacherStats] = useState<TeacherStats | null>(null);
   // Student edit modal
-  const [editingStudent, setEditingStudent] = useState<Student | null>(null)
-  const [editStudentName, setEditStudentName] = useState('')
-  const [editStudentGrade, setEditStudentGrade] = useState('')
-  const [editStudentPassword, setEditStudentPassword] = useState('')
-  const [editStudentSaving, setEditStudentSaving] = useState(false)
-  const [editStudentError, setEditStudentError] = useState<string | null>(null)
+  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [editStudentName, setEditStudentName] = useState('');
+  const [editStudentGrade, setEditStudentGrade] = useState('');
+  const [editStudentPassword, setEditStudentPassword] = useState('');
+  const [editStudentSaving, setEditStudentSaving] = useState(false);
+  const [editStudentError, setEditStudentError] = useState<string | null>(null);
 
   const loadAll = useCallback(() => {
-    setLoading(true)
-    const safeJson = (r: Response) => r.ok ? r.json().catch(() => null) : Promise.resolve(null)
+    setLoading(true);
+    const safeJson = (r: Response) => (r.ok ? r.json().catch(() => null) : Promise.resolve(null));
     Promise.all([
-      fetch('/api/teacher/invite-code').then(safeJson).catch(() => null),
-      fetch('/api/teacher/students').then(safeJson).catch(() => null),
-      fetch('/api/teacher/courses').then(safeJson).catch(() => null),
-      fetch('/api/teacher/assign-course').then(safeJson).catch(() => null),
-      fetch('/api/subjects').then(safeJson).catch(() => null),
-      fetch('/api/teacher/stats').then(safeJson).catch(() => null),
-    ]).then(([ic, studs, crses, asns, subs, stats]) => {
-      setInviteCode((ic as { invite_code?: string } | null)?.invite_code ?? null)
-      setStudents(Array.isArray(studs) ? (studs as Student[]) : [])
-      setCourses(Array.isArray(crses) ? (crses as Course[]) : [])
-      setAssignments(Array.isArray(asns) ? (asns as Assignment[]) : [])
-      setSubjects(Array.isArray(subs) ? (subs as Subject[]) : [])
-      setTeacherStats(stats as TeacherStats | null)
-    }).catch(() => {
-      // Never let a fetch failure crash the dashboard
-    }).finally(() => setLoading(false))
-  }, [])
+      fetch('/api/teacher/invite-code')
+        .then(safeJson)
+        .catch(() => null),
+      fetch('/api/teacher/students')
+        .then(safeJson)
+        .catch(() => null),
+      fetch('/api/teacher/courses')
+        .then(safeJson)
+        .catch(() => null),
+      fetch('/api/teacher/assign-course')
+        .then(safeJson)
+        .catch(() => null),
+      fetch('/api/subjects')
+        .then(safeJson)
+        .catch(() => null),
+      fetch('/api/teacher/stats')
+        .then(safeJson)
+        .catch(() => null),
+    ])
+      .then(([ic, studs, crses, asns, subs, stats]) => {
+        setInviteCode((ic as { invite_code?: string } | null)?.invite_code ?? null);
+        setStudents(Array.isArray(studs) ? (studs as Student[]) : []);
+        setCourses(Array.isArray(crses) ? (crses as Course[]) : []);
+        setAssignments(Array.isArray(asns) ? (asns as Assignment[]) : []);
+        setSubjects(Array.isArray(subs) ? (subs as Subject[]) : []);
+        setTeacherStats(stats as TeacherStats | null);
+      })
+      .catch(() => {
+        // Never let a fetch failure crash the dashboard
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
-  useEffect(() => { loadAll() }, [loadAll])
+  useEffect(() => {
+    loadAll();
+  }, [loadAll]);
 
   const updateCourseSubject = async (courseId: string, subjectId: string) => {
     try {
@@ -153,137 +204,149 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subjectId: subjectId === 'none' ? null : subjectId }),
-      })
+      });
       if (res.ok) {
-        loadAll()
+        loadAll();
       }
-    } catch { /* ignore */ }
-  }
+    } catch {
+      /* ignore */
+    }
+  };
 
   const unassignCourse = async (assignment: Assignment) => {
-    setUnassigningId(assignment.id)
+    setUnassigningId(assignment.id);
     try {
       const res = await fetch('/api/teacher/assign-course', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ classroom_id: assignment.classroom_id, student_id: assignment.student_id }),
-      })
+        body: JSON.stringify({
+          classroom_id: assignment.classroom_id,
+          student_id: assignment.student_id,
+        }),
+      });
       if (res.ok) {
-        setAssignments(prev => prev.filter(a => a.id !== assignment.id))
+        setAssignments((prev) => prev.filter((a) => a.id !== assignment.id));
       }
     } finally {
-      setUnassigningId(null)
+      setUnassigningId(null);
     }
-  }
+  };
 
   const deleteCourse = async (course: Course) => {
-    setDeletingId(course.id)
+    setDeletingId(course.id);
     try {
       const res = await fetch(`/api/user/classrooms?id=${course.id}`, {
         method: 'DELETE',
-      })
+      });
       if (res.ok) {
-        setCourses(prev => prev.filter(c => c.id !== course.id))
-        setDeleteConfirmCourse(null)
-        loadAll() // Refresh everything to update stats/assignments
+        setCourses((prev) => prev.filter((c) => c.id !== course.id));
+        setDeleteConfirmCourse(null);
+        loadAll(); // Refresh everything to update stats/assignments
       }
     } finally {
-      setDeletingId(null)
+      setDeletingId(null);
     }
-  }
+  };
 
   const loadExamResults = () => {
-    setExamResultsLoading(true)
+    setExamResultsLoading(true);
     fetch('/api/teacher/exam-results')
-      .then(r => r.ok ? r.json() : [])
+      .then((r) => (r.ok ? r.json() : []))
       .then((data: ExamWithResults[]) => setExamResults(Array.isArray(data) ? data : []))
       .catch(() => setExamResults([]))
-      .finally(() => setExamResultsLoading(false))
-  }
+      .finally(() => setExamResultsLoading(false));
+  };
 
   useEffect(() => {
     if (tab === 'exam-results' && examResults.length === 0 && !examResultsLoading) {
-      loadExamResults()
+      loadExamResults();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
 
   const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' })
-    router.push('/login')
-    router.refresh()
-  }
+    await fetch('/api/auth/logout', { method: 'POST' });
+    router.push('/login');
+    router.refresh();
+  };
 
   const openEditStudent = (s: Student) => {
-    setEditingStudent(s)
-    setEditStudentName(s.display_name)
-    setEditStudentGrade(s.grade ?? '')
-    setEditStudentPassword('')
-    setEditStudentError(null)
-  }
+    setEditingStudent(s);
+    setEditStudentName(s.display_name);
+    setEditStudentGrade(s.grade ?? '');
+    setEditStudentPassword('');
+    setEditStudentError(null);
+  };
 
   const handleSaveStudent = async () => {
-    if (!editingStudent) return
-    setEditStudentSaving(true)
-    setEditStudentError(null)
+    if (!editingStudent) return;
+    setEditStudentSaving(true);
+    setEditStudentError(null);
     try {
-      const patch: Record<string, string> = { student_id: editingStudent.id }
-      if (editStudentName.trim()) patch.display_name = editStudentName.trim()
-      patch.grade = editStudentGrade
-      if (editStudentPassword) patch.new_password = editStudentPassword
+      const patch: Record<string, string> = { student_id: editingStudent.id };
+      if (editStudentName.trim()) patch.display_name = editStudentName.trim();
+      patch.grade = editStudentGrade;
+      if (editStudentPassword) patch.new_password = editStudentPassword;
       const res = await fetch('/api/teacher/students', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(patch),
-      })
-      const data = await res.json() as { error?: string }
-      if (!res.ok) { setEditStudentError(data.error ?? 'Failed'); return }
-      setEditingStudent(null)
-      loadAll()
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        setEditStudentError(data.error ?? 'Failed');
+        return;
+      }
+      setEditingStudent(null);
+      loadAll();
     } catch {
-      setEditStudentError('Network error')
+      setEditStudentError('Network error');
     } finally {
-      setEditStudentSaving(false)
+      setEditStudentSaving(false);
     }
-  }
+  };
 
   const copyInviteCode = () => {
-    if (!inviteCode) return
+    if (!inviteCode) return;
     navigator.clipboard.writeText(inviteCode).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    })
-  }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
 
   const regenerateCode = async () => {
-    const res = await fetch('/api/teacher/invite-code', { method: 'POST' })
-    const data = await res.json()
-    if (data.invite_code) setInviteCode(data.invite_code)
-  }
+    const res = await fetch('/api/teacher/invite-code', { method: 'POST' });
+    const data = await res.json();
+    if (data.invite_code) setInviteCode(data.invite_code);
+  };
 
   const openStudentProgress = async (studentId: string) => {
-    const res = await fetch(`/api/teacher/student-progress?student_id=${studentId}`)
-    if (res.ok) setSelectedStudent(await res.json())
-  }
+    const res = await fetch(`/api/teacher/student-progress?student_id=${studentId}`);
+    if (res.ok) setSelectedStudent(await res.json());
+  };
 
   const openAssignModal = (course: Course) => {
-    setAssignModal(course)
-    setSelectedStudentIds(new Set())
-    setAssignResult(null)
-  }
+    setAssignModal(course);
+    setSelectedStudentIds(new Set());
+    setAssignResult(null);
+  };
 
   const toggleStudent = (id: string) => {
-    setSelectedStudentIds(prev => {
-      const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
-      return next
-    })
-  }
+    setSelectedStudentIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
 
   const submitAssign = async () => {
-    if (!assignModal || selectedStudentIds.size === 0) return
-    setAssigning(true)
-    setAssignResult(null)
+    if (!assignModal || selectedStudentIds.size === 0) return;
+    setAssigning(true);
+    setAssignResult(null);
     try {
       const res = await fetch('/api/teacher/assign-course', {
         method: 'POST',
@@ -292,18 +355,18 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
           classroom_id: assignModal.id,
           student_ids: [...selectedStudentIds],
         }),
-      })
-      const data = await res.json()
+      });
+      const data = await res.json();
       if (res.ok) {
-        setAssignResult(`✓ Assigned to ${data.assigned} student${data.assigned !== 1 ? 's' : ''}`)
-        loadAll()
+        setAssignResult(`✓ Assigned to ${data.assigned} student${data.assigned !== 1 ? 's' : ''}`);
+        loadAll();
       } else {
-        setAssignResult(`Error: ${data.error}`)
+        setAssignResult(`Error: ${data.error}`);
       }
     } finally {
-      setAssigning(false)
+      setAssigning(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -311,14 +374,22 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
       <header className="border-b border-border bg-card">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-foreground">OpenMAIC — Teacher</h1>
+            <h1 className="text-xl font-bold text-foreground">OpenTalib — Teacher</h1>
             <p className="text-sm text-muted-foreground">{displayName ?? userEmail}</p>
           </div>
           <div className="flex items-center gap-1">
-            <button onClick={() => router.push('/profile')} className="p-2 rounded-lg text-muted-foreground hover:bg-muted transition-colors" title="Profile settings">
+            <button
+              onClick={() => router.push('/profile')}
+              className="p-2 rounded-lg text-muted-foreground hover:bg-muted transition-colors"
+              title="Profile settings"
+            >
               <UserCircle className="w-4 h-4" />
             </button>
-            <button onClick={handleLogout} className="p-2 rounded-lg text-muted-foreground hover:bg-muted transition-colors" title="Logout">
+            <button
+              onClick={handleLogout}
+              className="p-2 rounded-lg text-muted-foreground hover:bg-muted transition-colors"
+              title="Logout"
+            >
               <LogOut className="w-4 h-4" />
             </button>
           </div>
@@ -328,13 +399,23 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
       {/* Tabs */}
       <div className="border-b border-border bg-card">
         <div className="max-w-6xl mx-auto px-6 flex gap-1">
-          {([
-            { id: 'students', label: 'My Students', icon: <Users className="w-4 h-4" /> },
-            { id: 'courses', label: 'My Courses', icon: <BookOpen className="w-4 h-4" /> },
-            { id: 'assignments', label: 'Assignments', icon: <ClipboardList className="w-4 h-4" /> },
-            { id: 'exam-results', label: 'Exam Results', icon: <BarChart2 className="w-4 h-4" /> },
-            { id: 'analytics', label: 'Analytics', icon: <BarChart2 className="w-4 h-4" /> },
-          ] as { id: Tab; label: string; icon: React.ReactNode }[]).map(t => (
+          {(
+            [
+              { id: 'students', label: 'My Students', icon: <Users className="w-4 h-4" /> },
+              { id: 'courses', label: 'My Courses', icon: <BookOpen className="w-4 h-4" /> },
+              {
+                id: 'assignments',
+                label: 'Assignments',
+                icon: <ClipboardList className="w-4 h-4" />,
+              },
+              {
+                id: 'exam-results',
+                label: 'Exam Results',
+                icon: <BarChart2 className="w-4 h-4" />,
+              },
+              { id: 'analytics', label: 'Analytics', icon: <BarChart2 className="w-4 h-4" /> },
+            ] as { id: Tab; label: string; icon: React.ReactNode }[]
+          ).map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
@@ -344,7 +425,8 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
                   : 'border-transparent text-muted-foreground hover:text-foreground'
               }`}
             >
-              {t.icon}{t.label}
+              {t.icon}
+              {t.label}
             </button>
           ))}
         </div>
@@ -356,7 +438,9 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
           <div className="space-y-6">
             {/* Invite Code */}
             <div className="bg-card border border-border rounded-xl p-5">
-              <p className="text-sm font-medium text-muted-foreground mb-2">Your Student Invite Code</p>
+              <p className="text-sm font-medium text-muted-foreground mb-2">
+                Your Student Invite Code
+              </p>
               <div className="flex items-center gap-3">
                 <span className="text-2xl font-mono font-bold tracking-widest text-foreground">
                   {inviteCode ?? '——————'}
@@ -366,7 +450,11 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
                   className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
                   title="Copy code"
                 >
-                  {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                  {copied ? (
+                    <Check className="w-4 h-4 text-green-500" />
+                  ) : (
+                    <Copy className="w-4 h-4" />
+                  )}
                 </button>
                 <button
                   onClick={regenerateCode}
@@ -376,45 +464,84 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
                   <RefreshCw className="w-4 h-4" />
                 </button>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">Share this code with students so they can sign up and join your class.</p>
+              <p className="text-xs text-muted-foreground mt-2">
+                Share this code with students so they can sign up and join your class.
+              </p>
             </div>
 
             {/* Student List */}
             <div>
               <h2 className="text-lg font-semibold mb-4">
-                Students <span className="text-muted-foreground font-normal text-sm">({students.length})</span>
+                Students{' '}
+                <span className="text-muted-foreground font-normal text-sm">
+                  ({students.length})
+                </span>
               </h2>
               {loading ? (
-                <div className="space-y-2">{[1, 2, 3].map(i => <div key={i} className="h-14 rounded-lg bg-muted animate-pulse" />)}</div>
+                <div className="space-y-2">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-14 rounded-lg bg-muted animate-pulse" />
+                  ))}
+                </div>
               ) : students.length === 0 ? (
                 <div className="text-center py-16 border-2 border-dashed border-border rounded-xl">
                   <Users className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-muted-foreground font-medium">No students yet — share your invite code</p>
+                  <p className="text-muted-foreground font-medium">
+                    No students yet — share your invite code
+                  </p>
                 </div>
               ) : (
                 <div className="bg-card border border-border rounded-xl overflow-hidden">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-border bg-muted/50">
-                        <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Name</th>
-                        <th className="text-left px-4 py-2.5 font-medium text-muted-foreground hidden sm:table-cell">Grade</th>
-                        <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">Courses</th>
-                        <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">Last Quiz</th>
-                        <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">Last Active</th>
+                        <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">
+                          Name
+                        </th>
+                        <th className="text-left px-4 py-2.5 font-medium text-muted-foreground hidden sm:table-cell">
+                          Grade
+                        </th>
+                        <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">
+                          Courses
+                        </th>
+                        <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">
+                          Last Quiz
+                        </th>
+                        <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">
+                          Last Active
+                        </th>
                         <th className="px-4 py-2.5" />
                       </tr>
                     </thead>
                     <tbody>
-                      {students.map(s => (
-                        <tr key={s.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
-                          <td className="px-4 py-3 font-medium text-foreground">{s.display_name}</td>
-                          <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">{s.grade ?? '—'}</td>
-                          <td className="px-4 py-3 text-center text-muted-foreground">{s.coursesAssigned}</td>
+                      {students.map((s) => (
+                        <tr
+                          key={s.id}
+                          className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
+                        >
+                          <td className="px-4 py-3 font-medium text-foreground">
+                            {s.display_name}
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">
+                            {s.grade ?? '—'}
+                          </td>
+                          <td className="px-4 py-3 text-center text-muted-foreground">
+                            {s.coursesAssigned}
+                          </td>
                           <td className="px-4 py-3 text-center">
-                            {s.lastQuizScore !== null ? <ScoreBadge pct={s.lastQuizScore} /> : <span className="text-muted-foreground">—</span>}
+                            {s.lastQuizScore !== null ? (
+                              <ScoreBadge pct={s.lastQuizScore} />
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
                           </td>
                           <td className="px-4 py-3 text-right text-xs text-muted-foreground">
-                            {s.lastAccessed ? new Date(s.lastAccessed).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—'}
+                            {s.lastAccessed
+                              ? new Date(s.lastAccessed).toLocaleDateString(undefined, {
+                                  month: 'short',
+                                  day: 'numeric',
+                                })
+                              : '—'}
                           </td>
                           <td className="px-4 py-3 text-right">
                             <div className="flex items-center justify-end gap-1">
@@ -469,54 +596,77 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
             {/* Subject Filter Bar */}
             {!loading && courses.length > 0 && subjects.length > 0 && (
               <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Filter by:</span>
+                <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                  Filter by:
+                </span>
                 <select
                   value={selectedSubjectId}
-                  onChange={e => setSelectedSubjectId(e.target.value)}
+                  onChange={(e) => setSelectedSubjectId(e.target.value)}
                   className="border rounded-lg px-3 py-2 text-sm bg-background cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/40"
                 >
                   <option value="all">All Subjects</option>
-                  {subjects.map(s => (
-                    <option key={s.id} value={s.id}>{s.icon} {s.name}</option>
+                  {subjects.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.icon} {s.name}
+                    </option>
                   ))}
                 </select>
               </div>
             )}
 
             {loading ? (
-              <div className="space-y-2">{[1, 2, 3].map(i => <div key={i} className="h-20 rounded-xl bg-muted animate-pulse" />)}</div>
+              <div className="space-y-2">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-20 rounded-xl bg-muted animate-pulse" />
+                ))}
+              </div>
             ) : courses.length === 0 ? (
               <div className="text-center py-16 border-2 border-dashed border-border rounded-xl">
                 <BookOpen className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-                <p className="text-muted-foreground font-medium">No courses yet — generate your first course</p>
+                <p className="text-muted-foreground font-medium">
+                  No courses yet — generate your first course
+                </p>
               </div>
             ) : (
               <div className="space-y-2">
                 {courses
-                  .filter(c => selectedSubjectId === 'all' || c.subject_id === selectedSubjectId)
-                  .map(c => {
-                    const displayTitle = (c.short_title || c.title || '').slice(0, 60)
+                  .filter((c) => selectedSubjectId === 'all' || c.subject_id === selectedSubjectId)
+                  .map((c) => {
+                    const displayTitle = (c.short_title || c.title || '').slice(0, 60);
                     return (
-                      <div key={c.id} className="bg-card border border-border rounded-xl p-4 flex items-center justify-between gap-4 transition-all hover:border-primary/30">
+                      <div
+                        key={c.id}
+                        className="bg-card border border-border rounded-xl p-4 flex items-center justify-between gap-4 transition-all hover:border-primary/30"
+                      >
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
                             <p className="font-medium text-foreground">{displayTitle}</p>
                             <span
                               className="px-1.5 py-0.5 rounded bg-muted text-[10px] text-muted-foreground font-mono hover:bg-muted/80 transition-colors cursor-pointer shrink-0"
                               title="Click to copy full course ID"
-                              onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(c.id); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigator.clipboard.writeText(c.id);
+                              }}
                             >
                               #{c.id.slice(-6)}
                             </span>
                           </div>
                           {c.short_title && c.title !== c.short_title && (
-                            <p className="text-[11px] text-muted-foreground line-clamp-1 mb-1" title={c.title}>
+                            <p
+                              className="text-[11px] text-muted-foreground line-clamp-1 mb-1"
+                              title={c.title}
+                            >
                               {c.title}
                             </p>
                           )}
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-[10px] text-muted-foreground">
-                              {new Date(c.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                              {new Date(c.created_at).toLocaleDateString(undefined, {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                              })}
                             </p>
                             {c.grade && (
                               <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-bold">
@@ -529,8 +679,10 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
                               className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-bold border-0 cursor-pointer focus:ring-1 focus:ring-purple-400/50 appearance-none hover:bg-purple-200 dark:hover:bg-purple-800/40 transition-colors"
                             >
                               <option value="none">No Subject</option>
-                              {subjects.map(s => (
-                                <option key={s.id} value={s.id}>{s.icon} {s.name}</option>
+                              {subjects.map((s) => (
+                                <option key={s.id} value={s.id}>
+                                  {s.icon} {s.name}
+                                </option>
                               ))}
                             </select>
                           </div>
@@ -557,11 +709,15 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
                           </button>
                         </div>
                       </div>
-                    )
+                    );
                   })}
-                {courses.filter(c => selectedSubjectId === 'all' || c.subject_id === selectedSubjectId).length === 0 && (
+                {courses.filter(
+                  (c) => selectedSubjectId === 'all' || c.subject_id === selectedSubjectId,
+                ).length === 0 && (
                   <div className="text-center py-12 border border-dashed border-border rounded-xl bg-muted/20">
-                    <p className="text-muted-foreground text-sm">No courses found for this subject.</p>
+                    <p className="text-muted-foreground text-sm">
+                      No courses found for this subject.
+                    </p>
                   </div>
                 )}
               </div>
@@ -574,33 +730,51 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
           <div>
             <h2 className="text-lg font-semibold mb-4">Course Assignments</h2>
             {loading ? (
-              <div className="space-y-2">{[1, 2, 3].map(i => <div key={i} className="h-12 rounded-lg bg-muted animate-pulse" />)}</div>
+              <div className="space-y-2">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-12 rounded-lg bg-muted animate-pulse" />
+                ))}
+              </div>
             ) : assignments.length === 0 ? (
               <div className="text-center py-16 border-2 border-dashed border-border rounded-xl">
                 <ClipboardList className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-                <p className="text-muted-foreground font-medium">No assignments yet — assign courses from the My Courses tab</p>
+                <p className="text-muted-foreground font-medium">
+                  No assignments yet — assign courses from the My Courses tab
+                </p>
               </div>
             ) : (
               <div className="bg-card border border-border rounded-xl overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border bg-muted/50">
-                      <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Course</th>
-                      <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Student</th>
-                      <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Assigned</th>
+                      <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">
+                        Course
+                      </th>
+                      <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">
+                        Student
+                      </th>
+                      <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">
+                        Assigned
+                      </th>
                       <th className="px-4 py-2.5" />
                     </tr>
                   </thead>
                   <tbody>
-                    {assignments.map(a => (
-                      <tr key={a.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
+                    {assignments.map((a) => (
+                      <tr
+                        key={a.id}
+                        className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
+                      >
                         <td className="px-4 py-3 text-foreground truncate max-w-[200px]">
                           <div className="flex items-center gap-2">
                             <span className="truncate">{a.classroom_title}</span>
                             <span
                               className="shrink-0 px-1 py-0.5 rounded bg-muted text-[10px] text-muted-foreground font-mono hover:bg-muted/80 transition-colors cursor-pointer"
                               title="Click to copy full ID"
-                              onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(a.classroom_id); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigator.clipboard.writeText(a.classroom_id);
+                              }}
                             >
                               #{a.classroom_id.slice(-6)}
                             </span>
@@ -608,7 +782,10 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
                         </td>
                         <td className="px-4 py-3 text-muted-foreground">{a.student_name}</td>
                         <td className="px-4 py-3 text-xs text-muted-foreground">
-                          {new Date(a.assigned_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                          {new Date(a.assigned_at).toLocaleDateString(undefined, {
+                            month: 'short',
+                            day: 'numeric',
+                          })}
                         </td>
                         <td className="px-4 py-3 text-right">
                           <button
@@ -632,7 +809,11 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
           <div className="space-y-4">
             <h2 className="text-lg font-semibold">Exam Results</h2>
             {examResultsLoading ? (
-              <div className="space-y-2">{[1, 2].map(i => <div key={i} className="h-16 rounded-xl bg-muted animate-pulse" />)}</div>
+              <div className="space-y-2">
+                {[1, 2].map((i) => (
+                  <div key={i} className="h-16 rounded-xl bg-muted animate-pulse" />
+                ))}
+              </div>
             ) : examResults.length === 0 ? (
               <div className="text-center py-16 border-2 border-dashed border-border rounded-xl">
                 <BarChart2 className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
@@ -640,17 +821,26 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
               </div>
             ) : (
               <div className="space-y-3">
-                {examResults.map(exam => {
-                  const isExpanded = expandedExams.has(exam.exam_id)
-                  const completed = exam.results.length
+                {examResults.map((exam) => {
+                  const isExpanded = expandedExams.has(exam.exam_id);
+                  const completed = exam.results.length;
                   return (
-                    <div key={exam.exam_id} className="bg-card border border-border rounded-xl overflow-hidden">
+                    <div
+                      key={exam.exam_id}
+                      className="bg-card border border-border rounded-xl overflow-hidden"
+                    >
                       <button
-                        onClick={() => setExpandedExams(prev => {
-                          const next = new Set(prev)
-                          next.has(exam.exam_id) ? next.delete(exam.exam_id) : next.add(exam.exam_id)
-                          return next
-                        })}
+                        onClick={() =>
+                          setExpandedExams((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(exam.exam_id)) {
+                              next.delete(exam.exam_id);
+                            } else {
+                              next.add(exam.exam_id);
+                            }
+                            return next;
+                          })
+                        }
                         className="w-full flex items-center justify-between px-5 py-4 hover:bg-muted/30 transition-colors"
                       >
                         <div className="text-left">
@@ -659,30 +849,56 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
                             {completed} student{completed !== 1 ? 's' : ''} completed
                           </p>
                         </div>
-                        <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                        <ChevronDown
+                          className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                        />
                       </button>
                       {isExpanded && (
                         <div className="border-t border-border">
                           {exam.results.length === 0 ? (
-                            <p className="px-5 py-4 text-sm text-muted-foreground">No students have completed this exam yet.</p>
+                            <p className="px-5 py-4 text-sm text-muted-foreground">
+                              No students have completed this exam yet.
+                            </p>
                           ) : (
                             <table className="w-full text-sm">
                               <thead>
                                 <tr className="border-b border-border bg-muted/30">
-                                  <th className="text-left px-5 py-2.5 font-medium text-muted-foreground">Student</th>
-                                  <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">Score</th>
-                                  <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">Result</th>
-                                  <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">Date</th>
+                                  <th className="text-left px-5 py-2.5 font-medium text-muted-foreground">
+                                    Student
+                                  </th>
+                                  <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">
+                                    Score
+                                  </th>
+                                  <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">
+                                    Result
+                                  </th>
+                                  <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">
+                                    Date
+                                  </th>
                                 </tr>
                               </thead>
                               <tbody>
                                 {exam.results.map((r, i) => (
-                                  <tr key={i} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
-                                    <td className="px-5 py-3 font-medium text-foreground">{r.student_name}</td>
-                                    <td className="px-4 py-3 text-center text-muted-foreground">{r.score}/{r.total_questions}</td>
-                                    <td className="px-4 py-3 text-center"><ScoreBadge pct={r.percentage} /></td>
+                                  <tr
+                                    key={i}
+                                    className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors"
+                                  >
+                                    <td className="px-5 py-3 font-medium text-foreground">
+                                      {r.student_name}
+                                    </td>
+                                    <td className="px-4 py-3 text-center text-muted-foreground">
+                                      {r.score}/{r.total_questions}
+                                    </td>
+                                    <td className="px-4 py-3 text-center">
+                                      <ScoreBadge pct={r.percentage} />
+                                    </td>
                                     <td className="px-4 py-3 text-right text-xs text-muted-foreground">
-                                      {r.completed_at ? new Date(r.completed_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—'}
+                                      {r.completed_at
+                                        ? new Date(r.completed_at).toLocaleDateString(undefined, {
+                                            month: 'short',
+                                            day: 'numeric',
+                                          })
+                                        : '—'}
                                     </td>
                                   </tr>
                                 ))}
@@ -692,7 +908,7 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
                         </div>
                       )}
                     </div>
-                  )
+                  );
                 })}
               </div>
             )}
@@ -703,11 +919,13 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
         {tab === 'analytics' && (
           <div className="space-y-6">
             <h2 className="text-lg font-semibold">Student Analytics</h2>
-            
+
             {loading || !teacherStats ? (
               <div className="space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {[1, 2, 3, 4].map(i => <div key={i} className="h-24 rounded-xl bg-muted animate-pulse" />)}
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="h-24 rounded-xl bg-muted animate-pulse" />
+                  ))}
                 </div>
                 <div className="h-64 rounded-xl bg-muted animate-pulse" />
               </div>
@@ -716,21 +934,37 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
                 {/* Summary Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="bg-card border border-border rounded-xl p-5 shadow-sm">
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Total Students</p>
-                    <p className="text-3xl font-black text-foreground">{teacherStats.totalStudents}</p>
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
+                      Total Students
+                    </p>
+                    <p className="text-3xl font-black text-foreground">
+                      {teacherStats.totalStudents}
+                    </p>
                   </div>
                   <div className="bg-card border border-border rounded-xl p-5 shadow-sm">
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Total Courses</p>
-                    <p className="text-3xl font-black text-foreground">{teacherStats.totalCourses}</p>
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
+                      Total Courses
+                    </p>
+                    <p className="text-3xl font-black text-foreground">
+                      {teacherStats.totalCourses}
+                    </p>
                   </div>
                   <div className="bg-card border border-border rounded-xl p-5 shadow-sm">
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Assignments</p>
-                    <p className="text-3xl font-black text-foreground">{teacherStats.totalAssignments}</p>
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
+                      Assignments
+                    </p>
+                    <p className="text-3xl font-black text-foreground">
+                      {teacherStats.totalAssignments}
+                    </p>
                   </div>
                   <div className="bg-card border border-border rounded-xl p-5 shadow-sm">
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">Avg Quiz Score</p>
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
+                      Avg Quiz Score
+                    </p>
                     <div className="flex items-center gap-2">
-                      <p className="text-3xl font-black text-foreground">{teacherStats.avgQuizScore}%</p>
+                      <p className="text-3xl font-black text-foreground">
+                        {teacherStats.avgQuizScore}%
+                      </p>
                       <ScoreBadge pct={teacherStats.avgQuizScore} />
                     </div>
                   </div>
@@ -740,7 +974,9 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
                   {/* Student Progress Table */}
                   <div className="lg:col-span-2 bg-card border border-border rounded-xl overflow-hidden shadow-sm">
                     <div className="px-5 py-4 border-b border-border bg-muted/10">
-                      <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">Student Progress</h3>
+                      <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">
+                        Student Progress
+                      </h3>
                     </div>
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
@@ -755,17 +991,32 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
-                          {teacherStats.studentProgress.map(s => (
+                          {teacherStats.studentProgress.map((s) => (
                             <tr key={s.id} className="hover:bg-muted/10 transition-colors">
                               <td className="px-5 py-3 font-medium text-foreground">{s.name}</td>
-                              <td className="px-4 py-3 text-center text-muted-foreground">{s.grade || '—'}</td>
-                              <td className="px-4 py-3 text-center text-muted-foreground">{s.coursesAssigned}</td>
-                              <td className="px-4 py-3 text-center text-muted-foreground">{s.coursesCompleted}</td>
+                              <td className="px-4 py-3 text-center text-muted-foreground">
+                                {s.grade || '—'}
+                              </td>
+                              <td className="px-4 py-3 text-center text-muted-foreground">
+                                {s.coursesAssigned}
+                              </td>
+                              <td className="px-4 py-3 text-center text-muted-foreground">
+                                {s.coursesCompleted}
+                              </td>
                               <td className="px-4 py-3 text-center">
-                                {s.lastQuizScore !== null ? <ScoreBadge pct={s.lastQuizScore} /> : <span className="text-muted-foreground text-xs">—</span>}
+                                {s.lastQuizScore !== null ? (
+                                  <ScoreBadge pct={s.lastQuizScore} />
+                                ) : (
+                                  <span className="text-muted-foreground text-xs">—</span>
+                                )}
                               </td>
                               <td className="px-5 py-3 text-right text-[10px] text-muted-foreground whitespace-nowrap">
-                                {s.lastActive ? new Date(s.lastActive).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—'}
+                                {s.lastActive
+                                  ? new Date(s.lastActive).toLocaleDateString(undefined, {
+                                      month: 'short',
+                                      day: 'numeric',
+                                    })
+                                  : '—'}
                               </td>
                             </tr>
                           ))}
@@ -777,11 +1028,15 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
                   {/* Popular Subjects */}
                   <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
                     <div className="px-5 py-4 border-b border-border bg-muted/10">
-                      <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">Popular Subjects</h3>
+                      <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">
+                        Popular Subjects
+                      </h3>
                     </div>
                     <div className="p-0">
                       {teacherStats.popularSubjects.length === 0 ? (
-                        <p className="p-8 text-center text-sm text-muted-foreground italic">No course data yet</p>
+                        <p className="p-8 text-center text-sm text-muted-foreground italic">
+                          No course data yet
+                        </p>
                       ) : (
                         <table className="w-full text-sm">
                           <tbody className="divide-y divide-border">
@@ -806,7 +1061,9 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
                 {/* Recent Activity */}
                 <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
                   <div className="px-5 py-4 border-b border-border bg-muted/10">
-                    <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">Recent Activity</h3>
+                    <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">
+                      Recent Activity
+                    </h3>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
@@ -826,20 +1083,33 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
                             <td className="px-5 py-3 text-muted-foreground uppercase text-[10px] font-bold tracking-wider">
                               {act.type}
                             </td>
-                            <td className="px-5 py-3 text-muted-foreground truncate max-w-[200px]" title={act.course_title}>
+                            <td
+                              className="px-5 py-3 text-muted-foreground truncate max-w-[200px]"
+                              title={act.course_title}
+                            >
                               {act.course_title}
                             </td>
                             <td className="px-5 py-3 text-center">
                               <ScoreBadge pct={act.score} />
                             </td>
                             <td className="px-5 py-3 text-right text-xs text-muted-foreground whitespace-nowrap">
-                              {new Date(act.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                              {new Date(act.date).toLocaleDateString(undefined, {
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
                             </td>
                           </tr>
                         ))}
                         {teacherStats.recentActivity.length === 0 && (
                           <tr>
-                            <td colSpan={5} className="px-5 py-8 text-center text-muted-foreground italic">No recent activity</td>
+                            <td
+                              colSpan={5}
+                              className="px-5 py-8 text-center text-muted-foreground italic"
+                            >
+                              No recent activity
+                            </td>
                           </tr>
                         )}
                       </tbody>
@@ -854,7 +1124,10 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
 
       {/* ── Student Progress Modal ── */}
       {selectedStudent && (
-        <Modal onClose={() => setSelectedStudent(null)} title={`Progress — ${selectedStudent.student.display_name}`}>
+        <Modal
+          onClose={() => setSelectedStudent(null)}
+          title={`Progress — ${selectedStudent.student.display_name}`}
+        >
           <div className="space-y-5">
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-muted/50 rounded-lg p-3 text-center">
@@ -863,7 +1136,9 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
               </div>
               <div className="bg-muted/50 rounded-lg p-3 text-center">
                 <p className="text-xl font-bold">
-                  {selectedStudent.stats.avgScore !== null ? `${selectedStudent.stats.avgScore}%` : '—'}
+                  {selectedStudent.stats.avgScore !== null
+                    ? `${selectedStudent.stats.avgScore}%`
+                    : '—'}
                 </p>
                 <p className="text-xs text-muted-foreground">Avg Score</p>
               </div>
@@ -873,10 +1148,15 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
               <div>
                 <p className="text-sm font-semibold mb-2">Assigned Courses</p>
                 <div className="space-y-1.5">
-                  {selectedStudent.assignments.map(a => (
-                    <div key={a.classroom_id} className="flex items-center justify-between text-sm rounded-lg bg-muted/30 px-3 py-2">
+                  {selectedStudent.assignments.map((a) => (
+                    <div
+                      key={a.classroom_id}
+                      className="flex items-center justify-between text-sm rounded-lg bg-muted/30 px-3 py-2"
+                    >
                       <span className="text-foreground truncate mr-2">{a.classroom_title}</span>
-                      <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${a.completed ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-muted text-muted-foreground'}`}>
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${a.completed ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-muted text-muted-foreground'}`}
+                      >
                         {a.completed ? 'Completed' : 'In Progress'}
                       </span>
                     </div>
@@ -890,10 +1170,15 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
                 <p className="text-sm font-semibold mb-2">Recent Quiz Results</p>
                 <div className="space-y-1.5">
                   {selectedStudent.recentQuizzes.map((q, i) => (
-                    <div key={i} className="flex items-center justify-between text-sm rounded-lg bg-muted/30 px-3 py-2">
+                    <div
+                      key={i}
+                      className="flex items-center justify-between text-sm rounded-lg bg-muted/30 px-3 py-2"
+                    >
                       <span className="text-foreground truncate mr-2">{q.classroom_title}</span>
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-muted-foreground text-xs">{q.score}/{q.total}</span>
+                        <span className="text-muted-foreground text-xs">
+                          {q.score}/{q.total}
+                        </span>
                         <ScoreBadge pct={q.percentage} />
                       </div>
                     </div>
@@ -907,14 +1192,19 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
 
       {/* ── Edit Student Modal ── */}
       {editingStudent && (
-        <Modal onClose={() => setEditingStudent(null)} title={`Edit: ${editingStudent.display_name}`}>
+        <Modal
+          onClose={() => setEditingStudent(null)}
+          title={`Edit: ${editingStudent.display_name}`}
+        >
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1">Display Name</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">
+                Display Name
+              </label>
               <input
                 type="text"
                 value={editStudentName}
-                onChange={e => setEditStudentName(e.target.value)}
+                onChange={(e) => setEditStudentName(e.target.value)}
                 placeholder="Student name"
                 className="w-full px-3 py-2 border border-border rounded-lg bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
@@ -923,21 +1213,25 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
               <label className="block text-sm font-medium mb-1">Grade</label>
               <select
                 value={editStudentGrade}
-                onChange={e => setEditStudentGrade(e.target.value)}
+                onChange={(e) => setEditStudentGrade(e.target.value)}
                 className="w-full px-3 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary text-sm"
               >
                 <option value="">No Grade</option>
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(g => (
-                  <option key={g} value={g}>Grade {g}</option>
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((g) => (
+                  <option key={g} value={g}>
+                    Grade {g}
+                  </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1">New Password <span className="font-normal">(leave blank to keep current)</span></label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">
+                New Password <span className="font-normal">(leave blank to keep current)</span>
+              </label>
               <input
                 type="password"
                 value={editStudentPassword}
-                onChange={e => setEditStudentPassword(e.target.value)}
+                onChange={(e) => setEditStudentPassword(e.target.value)}
                 placeholder="Min 6 characters"
                 className="w-full px-3 py-2 border border-border rounded-lg bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
@@ -959,13 +1253,20 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
         <Modal onClose={() => setAssignModal(null)} title={`Assign: ${assignModal.title}`}>
           <div className="space-y-4">
             {students.length === 0 ? (
-              <p className="text-muted-foreground text-sm">No students available. Share your invite code first.</p>
+              <p className="text-muted-foreground text-sm">
+                No students available. Share your invite code first.
+              </p>
             ) : (
               <>
-                <p className="text-sm text-muted-foreground">Select students to assign this course:</p>
+                <p className="text-sm text-muted-foreground">
+                  Select students to assign this course:
+                </p>
                 <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {students.map(s => (
-                    <label key={s.id} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted cursor-pointer">
+                  {students.map((s) => (
+                    <label
+                      key={s.id}
+                      className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted cursor-pointer"
+                    >
                       <input
                         type="checkbox"
                         checked={selectedStudentIds.has(s.id)}
@@ -973,12 +1274,16 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
                         className="w-4 h-4 rounded"
                       />
                       <span className="text-sm font-medium text-foreground">{s.display_name}</span>
-                      {s.grade && <span className="text-xs text-muted-foreground">Grade {s.grade}</span>}
+                      {s.grade && (
+                        <span className="text-xs text-muted-foreground">Grade {s.grade}</span>
+                      )}
                     </label>
                   ))}
                 </div>
                 {assignResult && (
-                  <p className={`text-sm ${assignResult.startsWith('✓') ? 'text-green-600' : 'text-destructive'}`}>
+                  <p
+                    className={`text-sm ${assignResult.startsWith('✓') ? 'text-green-600' : 'text-destructive'}`}
+                  >
                     {assignResult}
                   </p>
                 )}
@@ -987,7 +1292,9 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
                   disabled={assigning || selectedStudentIds.size === 0}
                   className="w-full py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
                 >
-                  {assigning ? 'Assigning…' : `Assign to ${selectedStudentIds.size} student${selectedStudentIds.size !== 1 ? 's' : ''}`}
+                  {assigning
+                    ? 'Assigning…'
+                    : `Assign to ${selectedStudentIds.size} student${selectedStudentIds.size !== 1 ? 's' : ''}`}
                 </button>
               </>
             )}
@@ -1001,10 +1308,12 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
           <div className="space-y-4">
             <div className="p-4 bg-destructive/10 text-destructive rounded-xl border border-destructive/20">
               <p className="text-sm font-medium">
-                Are you sure you want to delete <strong>&quot;{deleteConfirmCourse.title}&quot;</strong>?
+                Are you sure you want to delete{' '}
+                <strong>&quot;{deleteConfirmCourse.title}&quot;</strong>?
               </p>
               <p className="text-xs mt-2 opacity-90 leading-relaxed">
-                This action is permanent. It will also remove all student assignments and quiz results for this course.
+                This action is permanent. It will also remove all student assignments and quiz
+                results for this course.
               </p>
             </div>
             <div className="flex gap-3">
@@ -1026,39 +1335,49 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
         </Modal>
       )}
     </div>
-  )
+  );
 }
 
 // ─── Shared sub-components ────────────────────────────────────────────────────
 
 function ScoreBadge({ pct }: { pct: number }) {
-  const rounded = Math.round(pct)
-  const color = rounded >= 80
-    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-    : rounded >= 60
-      ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
-      : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+  const rounded = Math.round(pct);
+  const color =
+    rounded >= 80
+      ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+      : rounded >= 60
+        ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
+        : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400';
   return (
     <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${color}`}>
       {rounded}%
     </span>
-  )
+  );
 }
 
-function Modal({ children, onClose, title }: { children: React.ReactNode; onClose: () => void; title: string }) {
+function Modal({
+  children,
+  onClose,
+  title,
+}: {
+  children: React.ReactNode;
+  onClose: () => void;
+  title: string;
+}) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="bg-card border border-border rounded-2xl shadow-xl w-full max-w-md max-h-[85vh] flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <h3 className="font-semibold text-foreground">{title}</h3>
-          <button onClick={onClose} className="p-1 rounded hover:bg-muted text-muted-foreground transition-colors">
+          <button
+            onClick={onClose}
+            className="p-1 rounded hover:bg-muted text-muted-foreground transition-colors"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
-        <div className="overflow-y-auto p-5">
-          {children}
-        </div>
+        <div className="overflow-y-auto p-5">{children}</div>
       </div>
     </div>
-  )
+  );
 }

@@ -2,13 +2,13 @@
 
 ## Critical Boundary
 
-OpenMAIC generation does not automatically reuse the OpenClaw agent's current model or API key.
+OpenTalib generation does not automatically reuse the OpenClaw agent's current model or API key.
 
-OpenMAIC server APIs resolve their own model and provider keys from OpenMAIC server-side config.
+OpenTalib server APIs resolve their own model and provider keys from OpenTalib server-side config.
 
 This skill does not rely on runtime overrides for model, provider, API key, base URL, or provider type.
 
-If the user wants to change any of those, they must edit OpenMAIC server-side config files.
+If the user wants to change any of those, they must edit OpenTalib server-side config files.
 
 ## Interaction Policy
 
@@ -44,7 +44,7 @@ ANTHROPIC_API_KEY=sk-ant-...
 
 Why:
 
-- OpenMAIC server fallback is currently `gpt-4o-mini` if `DEFAULT_MODEL` is unset.
+- OpenTalib server fallback is currently `gpt-4o-mini` if `DEFAULT_MODEL` is unset.
 - If the user wants Anthropic or Google by default, they should set `DEFAULT_MODEL` explicitly.
 
 ### 2. Better Speed / Cost Balance
@@ -89,7 +89,7 @@ When recommending or showing `DEFAULT_MODEL`, always include the provider prefix
 - `openai:gpt-4o-mini`
 - `deepseek:deepseek-chat`
 
-Do not recommend bare model IDs such as `gemini-3-flash-preview` by themselves, because OpenMAIC will otherwise parse them as OpenAI models.
+Do not recommend bare model IDs such as `gemini-3-flash-preview` by themselves, because OpenTalib will otherwise parse them as OpenAI models.
 
 Do not work around a wrong `DEFAULT_MODEL` by changing request parameters. The user should fix the server-side config instead.
 
@@ -127,7 +127,7 @@ DEFAULT_MODEL=google:gemini-3-flash-preview
 
 Preferred:
 
-- "I recommend configuring OpenMAIC through `.env.local` first. Please edit that file locally and tell me when you're done."
+- "I recommend configuring OpenTalib through `.env.local` first. Please edit that file locally and tell me when you're done."
 - "For the simplest setup, I recommend Anthropic. For better speed/cost balance, I recommend Google plus `DEFAULT_MODEL=google:gemini-3-flash-preview`. Which path do you want?"
 
 Avoid as the first move:

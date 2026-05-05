@@ -41,7 +41,9 @@ export default function ClassroomDetailPage() {
       if (!useStageStore.getState().stage || useStageStore.getState().stage?.id !== classroomId) {
         log.info('No IndexedDB data, trying server-side storage for:', classroomId);
         try {
-          const res = await fetch(`/api/classroom?id=${encodeURIComponent(classroomId)}`, { credentials: 'include' });
+          const res = await fetch(`/api/classroom?id=${encodeURIComponent(classroomId)}`, {
+            credentials: 'include',
+          });
           if (res.ok) {
             const json = await res.json();
             if (json.success && json.classroom) {
@@ -154,13 +156,12 @@ export default function ClassroomDetailPage() {
     fetch('/api/user/course-progress', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        classroom_id: classroomId, 
+      body: JSON.stringify({
+        classroom_id: classroomId,
         last_scene_id: currentSceneId,
-        scene_viewed: currentSceneId
+        scene_viewed: currentSceneId,
       }),
     }).catch(() => {});
-
   }, [loading, error, classroomId, currentSceneId]);
 
   // Auto-resume generation for pending outlines

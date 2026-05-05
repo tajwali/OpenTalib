@@ -367,7 +367,10 @@ export async function callLLM<T extends GenerateTextParams>(
         }
 
         if (attempt < maxAttempts) {
-          log.warn(`[${source}] Call failed (attempt ${attempt}/${maxAttempts}), retrying...`, error);
+          log.warn(
+            `[${source}] Call failed (attempt ${attempt}/${maxAttempts}), retrying...`,
+            error,
+          );
           continue;
         }
       }

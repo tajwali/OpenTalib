@@ -198,7 +198,11 @@ export async function getFirstSlideByStages(
               const elementId = r.id.includes(':') ? r.id.split(':').slice(1).join(':') : r.id;
               mediaMap.set(elementId, r.blob);
               const mt = r.mimeType ?? '';
-              const ext = mt.includes('webp') ? 'webp' : mt.includes('jpg') || mt.includes('jpeg') ? 'jpg' : 'png';
+              const ext = mt.includes('webp')
+                ? 'webp'
+                : mt.includes('jpg') || mt.includes('jpeg')
+                  ? 'jpg'
+                  : 'png';
               extMap.set(elementId, ext);
             }
             for (const el of placeholderEls as Array<{ src: string }>) {

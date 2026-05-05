@@ -1,4 +1,4 @@
-# OpenMAIC Codebase Review Report — FOSS Guidelines Compliance
+# OpenTalib Codebase Review Report — FOSS Guidelines Compliance
 
 **Date:** April 13, 2026
 **Branch:** `multiuser-dev`

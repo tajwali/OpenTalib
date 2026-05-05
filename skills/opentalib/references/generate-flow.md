@@ -4,10 +4,10 @@
 
 - Repo path is confirmed
 - Startup mode has been chosen
-- OpenMAIC is healthy at the selected `url`
+- OpenTalib is healthy at the selected `url`
 - Provider keys are configured
 
-> **Hosted mode**: If using hosted OpenMAIC (open.maic.chat), all
+> **Hosted mode**: If using hosted OpenTalib (open.maic.chat), all
 > preconditions (repo, startup, provider keys) are already satisfied.
 > Include `Authorization: Bearer <access-code>` header on all requests below.
 > See [hosted-mode.md](hosted-mode.md) for details.
@@ -119,7 +119,7 @@ GET {pollUrl}
 - Prefer fewer poll attempts over aggressive polling. Long-running jobs are more likely to survive agent-loop limits if the tool-call cadence stays low.
 - Within a single agent turn, cap active polling to about 10 minutes. If the job is still not finished, tell the user it is still running and include the `jobId` and `pollUrl` so a later turn can continue checking without resubmitting.
 - Report progress to the user only when `status`, `step`, or visible progress meaningfully changes. Do not spam every poll result.
-- Do not try to recover from auth, provider, model, or base URL errors by changing request parameters. Tell the user to fix OpenMAIC server-side config and retry only after they confirm.
+- Do not try to recover from auth, provider, model, or base URL errors by changing request parameters. Tell the user to fix OpenTalib server-side config and retry only after they confirm.
 - On `failed`, surface the server error and include the `jobId`.
 - On `succeeded`, use `result.classroomId` and `result.url` from the final poll response.
 

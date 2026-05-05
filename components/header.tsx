@@ -44,7 +44,7 @@ export function Header({ currentSceneTitle, courseTitle }: HeaderProps) {
   const exportRef = useRef<HTMLDivElement>(null);
   const scenes = useStageStore((s) => s.scenes);
   const stage = useStageStore((s) => s.stage);
-  const outlines = useStageStore((s) => s.outlines);
+  const _outlines = useStageStore((s) => s.outlines);
   const generatingOutlines = useStageStore((s) => s.generatingOutlines);
   const failedOutlines = useStageStore((s) => s.failedOutlines);
   const mediaTasks = useMediaGenerationStore((s) => s.tasks);
@@ -79,7 +79,7 @@ export function Header({ currentSceneTitle, courseTitle }: HeaderProps) {
       }
     }
     // Deduplicate by elementId, keeping the one with the prompt if available
-    return Array.from(new Map(info.map(item => [item.elementId, item])).values());
+    return Array.from(new Map(info.map((item) => [item.elementId, item])).values());
   }, [scenes, mediaTasks]);
 
   const canExport =
@@ -101,7 +101,8 @@ export function Header({ currentSceneTitle, courseTitle }: HeaderProps) {
       const currentMediaTasks = useMediaGenerationStore.getState().tasks;
       const currentOutlines = useStageStore.getState().outlines;
 
-      const tasksToEnqueue: Array<{ elementId: string; prompt: string; type: 'image' | 'video' }> = [];
+      const tasksToEnqueue: Array<{ elementId: string; prompt: string; type: 'image' | 'video' }> =
+        [];
 
       // 1. Process missing images and retrieve their prompts
       for (const info of tasksToRetryInfo) {
@@ -126,12 +127,16 @@ export function Header({ currentSceneTitle, courseTitle }: HeaderProps) {
       }
 
       // Filter out tasks that are already in a non-retryable state or have no prompt
-      const finalTasksToEnqueue = tasksToEnqueue.filter(task => {
+      const finalTasksToEnqueue = tasksToEnqueue.filter((task) => {
         const existingTask = currentMediaTasks[task.elementId];
         // Enqueue if task is missing, pending, or failed AND has a prompt
-        return (!existingTask || existingTask.status === 'failed' || existingTask.status === 'pending') && task.prompt;
+        return (
+          (!existingTask ||
+            existingTask.status === 'failed' ||
+            existingTask.status === 'pending') &&
+          task.prompt
+        );
       });
-
 
       if (finalTasksToEnqueue.length > 0) {
         useMediaGenerationStore.getState().enqueueTasks(stage.id, finalTasksToEnqueue);
@@ -147,17 +152,18 @@ export function Header({ currentSceneTitle, courseTitle }: HeaderProps) {
         // If task doesn't exist, is pending (was just enqueued), or failed, ensure it's retried.
         // If task is 'done', we don't need to retry.
         if (!task || task.status === 'pending' || task.status === 'failed') {
-            // No direct action needed here, retryRemainingMedia will pick them up.
-            // The enqueueTasks above ensures they get a 'pending' status.
+          // No direct action needed here, retryRemainingMedia will pick them up.
+          // The enqueueTasks above ensures they get a 'pending' status.
         } else if (task.status !== 'done') {
-            // If task exists but is not done and not failed/pending, mark as failed for retry.
-            // This covers cases where the task was previously successful but the element still looks like a placeholder.
-            // e.g. blob URL became invalid.
-            useMediaGenerationStore.getState().markFailed(elementId, 'Placeholder mismatch or invalid URL');
+          // If task exists but is not done and not failed/pending, mark as failed for retry.
+          // This covers cases where the task was previously successful but the element still looks like a placeholder.
+          // e.g. blob URL became invalid.
+          useMediaGenerationStore
+            .getState()
+            .markFailed(elementId, 'Placeholder mismatch or invalid URL');
         }
         // If task.status is 'done', we skip marking as failed as it's already processed.
       }
-
 
       // 3. Retry all failed tasks for this stage
       await retryRemainingMedia(stage.id);
@@ -358,9 +364,7 @@ export function Header({ currentSceneTitle, courseTitle }: HeaderProps) {
                       : 'text-amber-600 dark:text-amber-400 hover:bg-white dark:hover:bg-gray-700 hover:shadow-sm',
                   )}
                 >
-                  <RefreshCw
-                    className={cn('w-3.5 h-3.5', retryingImages && 'animate-spin')}
-                  />
+                  <RefreshCw className={cn('w-3.5 h-3.5', retryingImages && 'animate-spin')} />
                   <span>
                     {retryingImages
                       ? `${t('settings.testingConnection')} (${failedMediaTasks.length})`

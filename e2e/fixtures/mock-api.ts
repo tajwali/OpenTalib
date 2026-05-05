@@ -4,7 +4,7 @@ import { mockSceneContentResponse } from './test-data/scene-content';
 import { createMockSceneActionsResponse } from './test-data/scene-actions';
 
 /**
- * Wraps Playwright's page.route() to mock OpenMAIC API endpoints.
+ * Wraps Playwright's page.route() to mock OpenTalib API endpoints.
  * Supports both JSON and SSE (text/event-stream) responses.
  */
 export class MockApi {

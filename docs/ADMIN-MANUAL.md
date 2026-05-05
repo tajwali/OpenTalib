@@ -1,6 +1,27 @@
 # Administrator Manual
 
-The Admin Dashboard provides high-level control over the OpenMAIC 2.0 platform, including user management, subject configuration, and system-wide statistics.
+The Admin Dashboard provides high-level control over the **OpenTalib** platform, including user management, subject configuration, and system-wide statistics.
+
+## First Time Setup
+
+After a fresh installation of OpenTalib, follow these steps to bootstrap your administrator account:
+
+1. **Register as a User:**
+   - Visit the `/signup` page in your browser.
+   - Register as an "Independent Learner" (Mature Student).
+2. **Promote to Admin via SQL:**
+   - On your server, execute the following SQL command to promote your account:
+     ```bash
+     sudo -u postgres psql -d postgres -c "
+     UPDATE public.user_profiles 
+     SET role = 'admin' 
+     WHERE id = (SELECT id FROM auth.users WHERE email = 'your-email@example.com');"
+     ```
+3. **Login and Configure:**
+   - Log out if you were logged in, then log back in. You will now be directed to the Admin Dashboard.
+   - **Create Teachers:** Register new users at `/signup` and promote their role to `teacher` via the Users tab.
+   - **Add Subjects:** Use the Subjects tab to add the educational categories your teachers will need.
+   - **Share Invite Codes:** Teachers can find their unique "Invite Code" on their dashboard to share with their students.
 
 ## Accessing the Dashboard
 
@@ -11,7 +32,7 @@ Administrators can access the dashboard by logging in with an account that has t
 The **Users** tab allows you to oversee all accounts on the platform.
 
 ### Creating Teacher Accounts
-Since OpenMAIC 2.0 is designed as a managed platform, teacher accounts are typically created by an administrator:
+Since OpenTalib is designed as a managed platform, teacher accounts are typically created by an administrator:
 1. Navigate to the **Users** tab.
 2. Click **Create Teacher**.
 3. Provide a Display Name, Email, and Password.
@@ -45,10 +66,10 @@ The **Statistics** tab provides real-time insights into platform usage:
 ## 4. Troubleshooting
 
 ### Auth Issues
-If users report login failures with "Unexpected non-whitespace character after JSON", ensure the `SUPABASE_AUTH_URL` is correctly set in `.env.local` and that the file has been copied to the standalone directory.
+If users report login failures, ensure the `SUPABASE_AUTH_URL` is correctly set in `.env.local` and that the file has been copied to the standalone directory. Refer to the **Troubleshooting Guide** in the `docs/` folder for more details.
 
 ### Media Generation Failures
 If images or TTS are not appearing:
 1. Check the **Statistics** tab to see if storage usage is increasing.
 2. Verify API keys for Google (Gemini/TTS) in the server environment.
-3. Check server logs using `journalctl -u openmaic -f`.
+3. Check server logs using `journalctl -u opentalib -f`.

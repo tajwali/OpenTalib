@@ -16,7 +16,6 @@ import {
 import type { AgentInfo } from '@/lib/generation/generation-pipeline';
 import type { SceneOutline, PdfImage, ImageMapping } from '@/lib/types/generation';
 import { createLogger } from '@/lib/logger';
-import { apiError, apiSuccess } from '@/lib/server/api-response';
 import { resolveModelFromHeaders } from '@/lib/server/resolve-model';
 
 const log = createLogger('Scene Content API');
@@ -54,7 +53,7 @@ export async function POST(req: NextRequest) {
           allOutlines,
           pdfImages,
           imageMapping,
-          stageInfo,
+          stageInfo: _stageInfo,
           stageId,
           agents,
           languageDirective,
@@ -176,19 +175,15 @@ export async function POST(req: NextRequest) {
 
         startKeepAlive();
 
-        const content = await generateSceneContent(
-          effectiveOutline,
-          aiCall,
-          {
-            assignedImages,
-            imageMapping,
-            languageModel: effectiveOutline.type === 'pbl' ? languageModel : undefined,
-            visionEnabled: hasVision,
-            generatedMediaMapping,
-            agents,
-            languageDirective,
-          },
-        );
+        const content = await generateSceneContent(effectiveOutline, aiCall, {
+          assignedImages,
+          imageMapping,
+          languageModel: effectiveOutline.type === 'pbl' ? languageModel : undefined,
+          visionEnabled: hasVision,
+          generatedMediaMapping,
+          agents,
+          languageDirective,
+        });
 
         stopKeepAlive();
 
@@ -238,4 +233,3 @@ export async function POST(req: NextRequest) {
     },
   });
 }
-

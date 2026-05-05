@@ -13,26 +13,25 @@ import { CLASSROOMS_DIR } from '@/lib/server/classroom-storage';
  * Always returns success — if the row doesn't exist yet (init POST still
  * in-flight) the UPDATE silently affects 0 rows; the final POST creates it.
  */
-export async function PATCH(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
 
     const supabase = await createClient();
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { scenes, subjectId, grade } = await req.json() as { 
-      scenes?: unknown[], 
-      subjectId?: string | null,
-      grade?: string | number | null 
+    const { scenes, subjectId, grade } = (await req.json()) as {
+      scenes?: unknown[];
+      subjectId?: string | null;
+      grade?: string | number | null;
     };
 
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (scenes !== undefined) updateData.scenes = scenes;
     if (subjectId !== undefined) updateData.subject_id = subjectId;
     if (grade !== undefined) updateData.grade = grade;
@@ -43,11 +42,7 @@ export async function PATCH(
 
     const admin = getSupabaseAdmin();
     // Silent UPDATE — no error surfaced if row doesn't exist yet
-    await admin
-      .from('classrooms')
-      .update(updateData)
-      .eq('id', id)
-      .eq('user_id', session.user.id);
+    await admin.from('classrooms').update(updateData).eq('id', id).eq('user_id', session.user.id);
 
     // Invalidate local file cache so the next GET serves fresh data from Supabase.
     // Without this, device B would load stale gen_img_* placeholder IDs from the

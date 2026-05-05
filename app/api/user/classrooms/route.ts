@@ -12,13 +12,16 @@ const log = createLogger('ClassroomsAPI');
 export async function POST(req: Request) {
   try {
     const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await req.json() as {
+    const body = (await req.json()) as {
       id?: string;
       title?: string;
       shortTitle?: string;
@@ -56,7 +59,8 @@ export async function POST(req: Request) {
     } else {
       // If we already have a good shortTitle from the stream, use it as the main title too
       // otherwise run the LLM title generation (which is more descriptive/human)
-      const generatedTitle = bodyShortTitle || await generateCourseTitle(requirement, sceneOutlineTitles);
+      const generatedTitle =
+        bodyShortTitle || (await generateCourseTitle(requirement, sceneOutlineTitles));
       finalTitle = (generatedTitle || title || requirement || 'Untitled Course').slice(0, 100);
       shortTitle = (bodyShortTitle || sceneOutlineTitles[0] || requirement).slice(0, 60) || null;
       log.info(`Course title for ${id}: "${finalTitle}"`);
@@ -66,17 +70,20 @@ export async function POST(req: Request) {
     const manualSubjectId = subjectId ?? null;
 
     const admin = getSupabaseAdmin();
-    const { error } = await admin.from('classrooms').upsert({
-      id,
-      user_id: user.id,
-      title: finalTitle,
-      short_title: shortTitle,
-      topic: requirement.slice(0, 500),
-      scenes: scenes ?? [],
-      status: 'complete',
-      grade: grade ? parseInt(String(grade).replace(/[^0-9]/g, "")) || null : null,
-      subject_id: manualSubjectId,
-    }, { onConflict: 'id' });
+    const { error } = await admin.from('classrooms').upsert(
+      {
+        id,
+        user_id: user.id,
+        title: finalTitle,
+        short_title: shortTitle,
+        topic: requirement.slice(0, 500),
+        scenes: scenes ?? [],
+        status: 'complete',
+        grade: grade ? parseInt(String(grade).replace(/[^0-9]/g, '')) || null : null,
+        subject_id: manualSubjectId,
+      },
+      { onConflict: 'id' },
+    );
 
     if (error) {
       log.error(`Classroom upsert failed for ${id}:`, error.message, error.code, error.details);
@@ -93,7 +100,10 @@ export async function POST(req: Request) {
             await admin.from('classrooms').update({ subject_id: classifiedId }).eq('id', id);
           }
         } catch (err) {
-          log.warn(`Background subject classification failed for ${id}:`, err instanceof Error ? err.message : String(err));
+          log.warn(
+            `Background subject classification failed for ${id}:`,
+            err instanceof Error ? err.message : String(err),
+          );
         }
       })();
     } else {
@@ -102,7 +112,10 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ok: true }, { status: 201 });
   } catch (err) {
-    log.error('POST /api/user/classrooms unhandled error:', err instanceof Error ? err.message : String(err));
+    log.error(
+      'POST /api/user/classrooms unhandled error:',
+      err instanceof Error ? err.message : String(err),
+    );
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Internal error' },
       { status: 500 },
@@ -113,7 +126,10 @@ export async function POST(req: Request) {
 export async function GET() {
   try {
     const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -122,7 +138,9 @@ export async function GET() {
     const admin = getSupabaseAdmin();
     const { data, error } = await admin
       .from('classrooms')
-      .select('id, title, short_title, topic, status, created_at, subject_id, grade, subjects(name, icon)')
+      .select(
+        'id, title, short_title, topic, status, created_at, subject_id, grade, subjects(name, icon)',
+      )
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
@@ -131,7 +149,7 @@ export async function GET() {
     }
 
     const mapped = (data ?? []).map((c: Record<string, unknown>) => {
-      const subjectRow = c.subjects as { name: string; icon: string } | null
+      const subjectRow = c.subjects as { name: string; icon: string } | null;
       return {
         id: c.id,
         title: c.title,
@@ -143,8 +161,8 @@ export async function GET() {
         subject_name: subjectRow?.name ?? null,
         subject_icon: subjectRow?.icon ?? null,
         grade: c.grade ?? null,
-      }
-    })
+      };
+    });
 
     return NextResponse.json(mapped);
   } catch (err) {
@@ -158,7 +176,10 @@ export async function GET() {
 export async function DELETE(req: NextRequest) {
   try {
     const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const id = new URL(req.url).searchParams.get('id');
@@ -181,7 +202,7 @@ export async function DELETE(req: NextRequest) {
     try {
       const jsonPath = path.join(CLASSROOMS_DIR, `${id}.json`);
       const mediaDir = path.join(CLASSROOMS_DIR, id);
-      
+
       await fs.rm(jsonPath, { force: true });
       await fs.rm(mediaDir, { recursive: true, force: true });
     } catch (cleanupErr) {

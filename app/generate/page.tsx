@@ -230,8 +230,12 @@ function HomePage() {
       // Try DB delete first
       const res = await fetch(`/api/user/classrooms?id=${id}`, { method: 'DELETE' });
       if (res.ok) {
-        setClassrooms(prev => prev.filter(c => c.id !== id));
-        setThumbnails(prev => { const next = { ...prev }; delete next[id]; return next; });
+        setClassrooms((prev) => prev.filter((c) => c.id !== id));
+        setThumbnails((prev) => {
+          const next = { ...prev };
+          delete next[id];
+          return next;
+        });
       } else {
         // Fallback: delete from IndexedDB only
         await deleteStageData(id);
@@ -552,7 +556,7 @@ function HomePage() {
         {/* ── Logo ── */}
         <motion.img
           src="/logo-horizontal.png"
-          alt="OpenMAIC"
+          alt="OpenTalib"
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{
@@ -610,7 +614,9 @@ function HomePage() {
               >
                 <option value="none">All Grades</option>
                 {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((g) => (
-                  <option key={g} value={`Grade ${g}`}>Grade {g}</option>
+                  <option key={g} value={`Grade ${g}`}>
+                    Grade {g}
+                  </option>
                 ))}
               </select>
               <select
@@ -620,7 +626,9 @@ function HomePage() {
               >
                 <option value="auto">Auto-detect subject</option>
                 {subjects.map((s) => (
-                  <option key={s.id} value={s.id}>{s.icon} {s.name}</option>
+                  <option key={s.id} value={s.id}>
+                    {s.icon} {s.name}
+                  </option>
                 ))}
               </select>
             </div>
@@ -702,18 +710,22 @@ function HomePage() {
                 {t('classroom.recentClassrooms')}
                 <span className="text-[11px] tabular-nums opacity-60">{classrooms.length}</span>
               </span>
-              
+
               {classrooms.length > 0 && subjects.length > 0 && (
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Filter:</span>
+                  <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                    Filter:
+                  </span>
                   <select
                     value={selectedSubjectId}
-                    onChange={e => setSelectedSubjectId(e.target.value)}
+                    onChange={(e) => setSelectedSubjectId(e.target.value)}
                     className="border rounded-lg px-3 py-2 text-sm bg-background cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/40"
                   >
                     <option value="all">All Subjects</option>
-                    {subjects.map(s => (
-                      <option key={s.id} value={s.id}>{s.icon} {s.name}</option>
+                    {subjects.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.icon} {s.name}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -724,13 +736,18 @@ function HomePage() {
                 transition={{ duration: 0.3, ease: 'easeInOut' }}
                 className="cursor-pointer"
               >
-                <ChevronDown className="size-3.5" onClick={() => {
-                  const next = !recentOpen;
-                  setRecentOpen(next);
-                  try {
-                    localStorage.setItem(RECENT_OPEN_STORAGE_KEY, String(next));
-                  } catch { /* ignore */ }
-                }} />
+                <ChevronDown
+                  className="size-3.5"
+                  onClick={() => {
+                    const next = !recentOpen;
+                    setRecentOpen(next);
+                    try {
+                      localStorage.setItem(RECENT_OPEN_STORAGE_KEY, String(next));
+                    } catch {
+                      /* ignore */
+                    }
+                  }}
+                />
               </motion.div>
             </div>
             <div className="flex-1 h-px bg-border/40" />
@@ -748,35 +765,39 @@ function HomePage() {
               >
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-5 gap-y-8">
                   {classrooms
-                    .filter(c => selectedSubjectId === 'all' || c.subjectId === selectedSubjectId)
+                    .filter((c) => selectedSubjectId === 'all' || c.subjectId === selectedSubjectId)
                     .map((classroom, i) => (
-                    <motion.div
-                      key={classroom.id}
-                      initial={{ opacity: 0, y: 16 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{
-                        delay: i * 0.04,
-                        duration: 0.35,
-                        ease: 'easeOut',
-                      }}
-                    >
-                      <ClassroomCard
-                        classroom={classroom}
-                        slide={thumbnails[classroom.id]}
-                        formatDate={formatDate}
-                        onDelete={handleDelete}
-                        confirmingDelete={pendingDeleteId === classroom.id}
-                        onConfirmDelete={() => confirmDelete(classroom.id)}
-                        onCancelDelete={() => setPendingDeleteId(null)}
-                        onClick={() => router.push(`/classroom/${classroom.id}`)}
-                      />
-                    </motion.div>
-                  ))}
+                      <motion.div
+                        key={classroom.id}
+                        initial={{ opacity: 0, y: 16 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{
+                          delay: i * 0.04,
+                          duration: 0.35,
+                          ease: 'easeOut',
+                        }}
+                      >
+                        <ClassroomCard
+                          classroom={classroom}
+                          slide={thumbnails[classroom.id]}
+                          formatDate={formatDate}
+                          onDelete={handleDelete}
+                          confirmingDelete={pendingDeleteId === classroom.id}
+                          onConfirmDelete={() => confirmDelete(classroom.id)}
+                          onCancelDelete={() => setPendingDeleteId(null)}
+                          onClick={() => router.push(`/classroom/${classroom.id}`)}
+                        />
+                      </motion.div>
+                    ))}
                 </div>
-                {classrooms.filter(c => selectedSubjectId === 'all' || c.subjectId === selectedSubjectId).length === 0 && (
-                   <div className="text-center py-12 border border-dashed border-border rounded-xl bg-muted/20">
-                     <p className="text-muted-foreground text-sm">No courses found for this subject.</p>
-                   </div>
+                {classrooms.filter(
+                  (c) => selectedSubjectId === 'all' || c.subjectId === selectedSubjectId,
+                ).length === 0 && (
+                  <div className="text-center py-12 border border-dashed border-border rounded-xl bg-muted/20">
+                    <p className="text-muted-foreground text-sm">
+                      No courses found for this subject.
+                    </p>
+                  </div>
                 )}
               </motion.div>
             )}
@@ -786,7 +807,7 @@ function HomePage() {
 
       {/* Footer — flows with content, at the very end */}
       <div className="mt-auto pt-12 pb-4 text-center text-xs text-muted-foreground/40">
-        OpenMAIC Open Source Project
+        OpenTalib Open Source Project
       </div>
     </div>
   );

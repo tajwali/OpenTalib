@@ -1,49 +1,47 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { ArrowLeft, Sparkles, BookOpen, Clock, BarChart2 } from 'lucide-react'
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, Sparkles, BookOpen, Clock, BarChart2 } from 'lucide-react';
 
 interface Classroom {
-  id: string
-  title: string
-  topic: string
-  created_at: string
+  id: string;
+  title: string;
+  topic: string;
+  created_at: string;
 }
 
 export default function CreateExamPage() {
-  const router = useRouter()
-  const [classrooms, setClassrooms] = useState<Classroom[]>([])
-  const [loading, setLoading] = useState(true)
-  const [generating, setGenerating] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const router = useRouter();
+  const [classrooms, setClassrooms] = useState<Classroom[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const [selected, setSelected] = useState<string[]>([])
-  const [numQuestions, setNumQuestions] = useState(10)
-  const [difficulty, setDifficulty] = useState('mixed')
-  const [timeLimit, setTimeLimit] = useState(30)
-  const [title, setTitle] = useState('')
+  const [selected, setSelected] = useState<string[]>([]);
+  const [numQuestions, setNumQuestions] = useState(10);
+  const [difficulty, setDifficulty] = useState('mixed');
+  const [timeLimit, setTimeLimit] = useState(30);
+  const [title, setTitle] = useState('');
 
   useEffect(() => {
     fetch('/api/user/classrooms')
-      .then(r => r.ok ? r.json() : [])
+      .then((r) => (r.ok ? r.json() : []))
       .then((data: Classroom[]) => {
-        setClassrooms(data)
-        setLoading(false)
+        setClassrooms(data);
+        setLoading(false);
       })
-      .catch(() => setLoading(false))
-  }, [])
+      .catch(() => setLoading(false));
+  }, []);
 
   function toggleCourse(id: string) {
-    setSelected(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id],
-    )
+    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   }
 
   async function handleGenerate() {
-    if (!selected.length) return
-    setGenerating(true)
-    setError(null)
+    if (!selected.length) return;
+    setGenerating(true);
+    setError(null);
     try {
       const res = await fetch('/api/exams/generate', {
         method: 'POST',
@@ -55,22 +53,26 @@ export default function CreateExamPage() {
           time_limit_minutes: timeLimit,
           title: title.trim() || undefined,
         }),
-      })
-      const data = await res.json() as { id?: string; error?: string }
+      });
+      const data = (await res.json()) as { id?: string; error?: string };
       if (!res.ok || !data.id) {
-        setError(data.error ?? 'Generation failed')
-        setGenerating(false)
-        return
+        setError(data.error ?? 'Generation failed');
+        setGenerating(false);
+        return;
       }
-      router.push(`/exam/${data.id}`)
+      router.push(`/exam/${data.id}`);
     } catch {
-      setError('Network error. Please try again.')
-      setGenerating(false)
+      setError('Network error. Please try again.');
+      setGenerating(false);
     }
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen text-gray-500">Loading courses…</div>
+    return (
+      <div className="flex items-center justify-center min-h-screen text-gray-500">
+        Loading courses…
+      </div>
+    );
   }
 
   return (
@@ -84,7 +86,9 @@ export default function CreateExamPage() {
         </button>
 
         <h1 className="text-2xl font-bold text-gray-900 mb-1">Create Exam</h1>
-        <p className="text-gray-500 text-sm mb-6">Select courses and let AI generate exam questions</p>
+        <p className="text-gray-500 text-sm mb-6">
+          Select courses and let AI generate exam questions
+        </p>
 
         {/* Course selection */}
         <div className="bg-white rounded-2xl shadow-sm p-5 mb-4">
@@ -96,7 +100,7 @@ export default function CreateExamPage() {
             <p className="text-sm text-gray-400">No courses found. Generate a course first.</p>
           ) : (
             <div className="space-y-2">
-              {classrooms.map(c => (
+              {classrooms.map((c) => (
                 <button
                   key={c.id}
                   onClick={() => toggleCourse(c.id)}
@@ -127,7 +131,7 @@ export default function CreateExamPage() {
               <input
                 type="text"
                 value={title}
-                onChange={e => setTitle(e.target.value)}
+                onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g. Unit 3 Assessment"
                 className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
               />
@@ -142,7 +146,7 @@ export default function CreateExamPage() {
                 min={5}
                 max={30}
                 value={numQuestions}
-                onChange={e => setNumQuestions(Number(e.target.value))}
+                onChange={(e) => setNumQuestions(Number(e.target.value))}
                 className="w-full"
               />
             </div>
@@ -150,7 +154,7 @@ export default function CreateExamPage() {
             <div>
               <label className="text-sm text-gray-600 block mb-2">Difficulty</label>
               <div className="grid grid-cols-4 gap-2">
-                {(['easy', 'medium', 'hard', 'mixed'] as const).map(d => (
+                {(['easy', 'medium', 'hard', 'mixed'] as const).map((d) => (
                   <button
                     key={d}
                     onClick={() => setDifficulty(d)}
@@ -177,7 +181,7 @@ export default function CreateExamPage() {
                 max={120}
                 step={5}
                 value={timeLimit}
-                onChange={e => setTimeLimit(Number(e.target.value))}
+                onChange={(e) => setTimeLimit(Number(e.target.value))}
                 className="w-full"
               />
             </div>
@@ -200,9 +204,11 @@ export default function CreateExamPage() {
           }`}
         >
           <Sparkles className="w-4 h-4" />
-          {generating ? 'Generating Exam…' : `Generate Exam from ${selected.length} Course${selected.length !== 1 ? 's' : ''}`}
+          {generating
+            ? 'Generating Exam…'
+            : `Generate Exam from ${selected.length} Course${selected.length !== 1 ? 's' : ''}`}
         </button>
       </div>
     </div>
-  )
+  );
 }

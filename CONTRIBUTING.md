@@ -1,6 +1,6 @@
-# Contributing to OpenMAIC
+# Contributing to OpenTalib
 
-Thank you for your interest in contributing to OpenMAIC! This guide will help you get started and ensure a smooth collaboration.
+Thank you for your interest in contributing to **OpenTalib**! This guide will help you get started and ensure a smooth collaboration.
 
 ## How to Contribute
 
@@ -8,7 +8,7 @@ Thank you for your interest in contributing to OpenMAIC! This guide will help yo
 | --- | --- |
 | **Bug fix** | Open a PR directly (link the issue if one exists) |
 | **Extending existing features** (e.g. adding a new model provider, new TTS engine) | Open a PR directly |
-| **New feature or architecture change** | Start a [GitHub Discussion](https://github.com/THU-MAIC/OpenMAIC/discussions) or ask in [Discord](https://discord.gg/PtZaaTbH) **before** opening a PR |
+| **New feature or architecture change** | Start a [GitHub Discussion](https://github.com/tajwali/OpenTalib/discussions) or ask in [Discord](https://discord.gg/PtZaaTbH) **before** opening a PR |
 | **Design / UI change** | Discuss in a GitHub Discussion or Discord first — include mockups or screenshots |
 | **Refactor-only PR** | Not accepted unless a maintainer explicitly requests it |
 | **Documentation** | Open a PR directly |
@@ -32,8 +32,8 @@ To avoid duplicate effort, please **comment on an issue** to claim it before you
 
 ```bash
 # Clone the repository
-git clone https://github.com/THU-MAIC/OpenMAIC.git
-cd OpenMAIC
+git clone https://github.com/tajwali/OpenTalib.git
+cd OpenTalib
 
 # Install dependencies
 pnpm install
@@ -131,7 +131,7 @@ AI-assisted PRs are held to the same quality standard as any other PR. Community
 ## Project Structure
 
 ```
-OpenMAIC/
+OpenTalib/
 ├── app/              # Next.js app router pages and API routes
 ├── components/       # React components
 ├── lib/              # Shared utilities and core logic
@@ -143,7 +143,7 @@ OpenMAIC/
 
 ## Reporting Bugs
 
-Use the [Bug Report](https://github.com/THU-MAIC/OpenMAIC/issues/new?template=bug_report.yml) issue template. Include:
+Use the [Bug Report](https://github.com/tajwali/OpenTalib/issues/new?template=bug_report.yml) issue template. Include:
 
 - Steps to reproduce
 - Expected vs. actual behavior
@@ -152,12 +152,12 @@ Use the [Bug Report](https://github.com/THU-MAIC/OpenMAIC/issues/new?template=bu
 
 ## Requesting Features
 
-Use the [Feature Request](https://github.com/THU-MAIC/OpenMAIC/issues/new?template=feature_request.yml) issue template. For larger features, please open a [Discussion](https://github.com/THU-MAIC/OpenMAIC/discussions) first.
+Use the [Feature Request](https://github.com/tajwali/OpenTalib/issues/new?template=feature_request.yml) issue template. For larger features, please open a [Discussion](https://github.com/tajwali/OpenTalib/discussions) first.
 
 ## Security Vulnerabilities
 
-Please report security vulnerabilities through [GitHub Security Advisories](https://github.com/THU-MAIC/OpenMAIC/security/advisories/new). **Do not** open a public issue for security vulnerabilities.
+Please report security vulnerabilities through [GitHub Security Advisories](https://github.com/tajwali/OpenTalib/security/advisories/new). **Do not** open a public issue for security vulnerabilities.
 
 ## License
 
-By contributing to OpenMAIC, you agree that your contributions will be licensed under the [AGPL-3.0 License](LICENSE).
+By contributing to OpenTalib, you agree that your contributions will be licensed under the [AGPL-3.0 License](LICENSE).

@@ -782,7 +782,10 @@ export function QuizView({ questions, sceneId }: QuizViewProps) {
             scene_id: sceneId,
             score,
             total,
-            answers: Object.entries(answers).map(([questionId, answer]) => ({ questionId, answer })),
+            answers: Object.entries(answers).map(([questionId, answer]) => ({
+              questionId,
+              answer,
+            })),
           }),
         }).catch(() => {});
       }
