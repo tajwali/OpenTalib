@@ -82,7 +82,10 @@ export async function GET(request: NextRequest) {
     if (dbError || !row) {
       return apiError(API_ERROR_CODES.INVALID_REQUEST, 404, 'Classroom not found');
     }
-    if (!row.scenes || (row.scenes as unknown[]).length === 0) {
+
+    // Fixed: Ensure we correctly check the length of scenes, which is a JSONB array
+    const scenes = row.scenes;
+    if (!scenes || (Array.isArray(scenes) && scenes.length === 0)) {
       return apiError(API_ERROR_CODES.INVALID_REQUEST, 404, 'Course has no content');
     }
 
