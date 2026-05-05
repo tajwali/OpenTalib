@@ -14,6 +14,7 @@
     "lint": "eslint",
     "check": "prettier . --check",
     "format": "prettier . --write",
+    "db:setup": "psql -d opentalib -f supabase/schema/complete_schema.sql && for f in supabase/migrations/*.sql; do psql -d opentalib -f $f; done",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui"
