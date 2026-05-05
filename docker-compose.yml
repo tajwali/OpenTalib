@@ -1,15 +1,19 @@
+version: '3.8'
 services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - db_data:/var/lib/postgresql/data
   opentalib:
     build: .
     ports:
       - "3000:3000"
-    env_file:
-      - .env.local
-    volumes:
-      # Optional: mount server-providers.yml for provider config
-      # - ./server-providers.yml:/app/server-providers.yml:ro
-      - opentalib-data:/app/data
-    restart: unless-stopped
-
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@db:5432/postgres
+    depends_on:
+      - db
 volumes:
-  opentalib-data:
+  db_data:
