@@ -24,17 +24,25 @@ export const maxDuration = 30;
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { text, audioId, ttsProviderId, ttsModelId, ttsVoice: requestedVoice, ttsSpeed, ttsApiKey, ttsBaseUrl } =
-      body as {
-        text: string;
-        audioId: string;
-        ttsProviderId: TTSProviderId;
-        ttsModelId?: string;
-        ttsVoice: string;
-        ttsSpeed?: number;
-        ttsApiKey?: string;
-        ttsBaseUrl?: string;
-      };
+    const {
+      text,
+      audioId,
+      ttsProviderId,
+      ttsModelId,
+      ttsVoice: requestedVoice,
+      ttsSpeed,
+      ttsApiKey,
+      ttsBaseUrl,
+    } = body as {
+      text: string;
+      audioId: string;
+      ttsProviderId: TTSProviderId;
+      ttsModelId?: string;
+      ttsVoice: string;
+      ttsSpeed?: number;
+      ttsApiKey?: string;
+      ttsBaseUrl?: string;
+    };
 
     // Validate required fields
     if (!text || !audioId || !ttsProviderId || !requestedVoice) {
@@ -64,19 +72,28 @@ export async function POST(req: NextRequest) {
 
         if (profile?.gender) {
           const gender = profile.gender.toLowerCase();
-          // female -> alloy, nova, or shimmer
-          if (gender === 'female' && !['alloy', 'nova', 'shimmer'].includes(requestedVoice)) {
-            // Only override if the requested voice isn't already a female one
-            // Use deterministic selection based on audioId so different segments of the same text/agent use the same voice
-            const femaleVoices = ['alloy', 'nova', 'shimmer'];
-            const idx = audioId.length % femaleVoices.length;
-            ttsVoice = femaleVoices[idx];
+
+          // ── Kokoro Gender-based Voice Override ──
+          // If using openai-tts (Kokoro), map to af_heart/am_adam
+          if (
+            gender === 'female' &&
+            !['af_heart', 'af_bella', 'bf_emma'].includes(requestedVoice)
+          ) {
+            ttsVoice = 'af_heart';
+          } else if (
+            gender === 'male' &&
+            !['am_adam', 'am_michael', 'bm_george'].includes(requestedVoice)
+          ) {
+            ttsVoice = 'am_adam';
           }
-          // male -> onyx or echo
-          else if (gender === 'male' && !['onyx', 'echo'].includes(requestedVoice)) {
-            const maleVoices = ['onyx', 'echo'];
-            const idx = audioId.length % maleVoices.length;
-            ttsVoice = maleVoices[idx];
+        } else {
+          // Fallback if no gender set but using openai-tts
+          if (
+            !['af_heart', 'af_bella', 'bf_emma', 'am_adam', 'am_michael', 'bm_george'].includes(
+              requestedVoice,
+            )
+          ) {
+            ttsVoice = 'af_heart';
           }
         }
       }

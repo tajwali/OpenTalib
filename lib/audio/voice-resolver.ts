@@ -18,6 +18,7 @@ export function resolveAgentVoice(
   agent: AgentConfig,
   agentIndex: number,
   availableProviders: ProviderWithVoices[],
+  gender?: string | null,
 ): ResolvedVoice {
   // Agent-specific config
   if (agent.voiceConfig) {
@@ -47,6 +48,19 @@ export function resolveAgentVoice(
   // Fallback: first available provider, deterministic voice
   if (availableProviders.length > 0) {
     const first = availableProviders[0];
+
+    // ── Kokoro Gender-based Voice Selection ──
+    if (first.providerId === 'openai-tts') {
+      const voiceId = gender?.toLowerCase() === 'male' ? 'am_adam' : 'af_heart';
+      // Ensure the selected voice actually exists in the provider's voice list
+      if (first.voices.some((v) => v.id === voiceId)) {
+        return {
+          providerId: first.providerId,
+          voiceId: voiceId,
+        };
+      }
+    }
+
     return {
       providerId: first.providerId,
       voiceId: first.voices[agentIndex % first.voices.length].id,
