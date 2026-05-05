@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { checkRateLimit } from '@/lib/server/rate-limit';
 
 function makeAuthFetch() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseUrl = process.env.SUPABASE_URL!;
   const authUrl = process.env.SUPABASE_AUTH_URL;
   // SUPABASE_AUTH_URL must be set — without it auth requests go to Kong which has no
   // /auth/v1 route and returns "404 page not found", causing a cryptic JSON parse error.
@@ -54,23 +54,17 @@ export async function POST(request: Request) {
     }
     const cookieStore = await cookies();
 
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        global: { fetch: makeAuthFetch() },
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options),
-            );
-          },
+    const supabase = createServerClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!, {
+      global: { fetch: makeAuthFetch() },
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
         },
       },
-    );
+    });
 
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 

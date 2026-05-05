@@ -6,10 +6,10 @@ let adminClient: SupabaseClient<any> | null = null;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getSupabaseAdmin(): SupabaseClient<any> {
   if (!adminClient) {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const url = process.env.SUPABASE_URL;
     const key = process.env.SUPABASE_SERVICE_KEY;
     if (!url || !key) {
-      const missing = [!url && 'NEXT_PUBLIC_SUPABASE_URL', !key && 'SUPABASE_SERVICE_KEY']
+      const missing = [!url && 'SUPABASE_URL', !key && 'SUPABASE_SERVICE_KEY']
         .filter(Boolean)
         .join(', ');
       throw new Error(

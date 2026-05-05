@@ -20,12 +20,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ pa
   return handleProxy(req, path);
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ path: string[] }> },
+) {
   const { path } = await params;
   return handleProxy(req, path);
 }
 
-export async function OPTIONS(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+export async function OPTIONS(
+  req: NextRequest,
+  { params }: { params: Promise<{ path: string[] }> },
+) {
   const { path } = await params;
   return handleProxy(req, path);
 }
@@ -44,11 +50,11 @@ async function handleProxy(req: NextRequest, path: string[]) {
   headers.delete('connection');
   headers.delete('keep-alive');
 
-  let body: any = undefined;
+  let body: BodyInit | null | undefined = undefined;
   if (req.method !== 'GET' && req.method !== 'HEAD' && req.method !== 'OPTIONS') {
     try {
       body = await req.arrayBuffer();
-    } catch (e) {
+    } catch (_err) {
       // Body might be empty or unreadable
     }
   }
@@ -58,7 +64,7 @@ async function handleProxy(req: NextRequest, path: string[]) {
       method: req.method,
       headers,
       body,
-      // @ts-ignore - duplex is needed for streaming/body in some environments
+      // @ts-expect-error - duplex is needed for streaming/body in some environments
       duplex: 'half',
     });
 

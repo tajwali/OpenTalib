@@ -225,10 +225,10 @@ subjects (id, name, icon)
 
 ### Critical Env Vars
 ```
-NEXT_PUBLIC_SUPABASE_URL      # Kong URL, e.g. http://192.168.10.128:8000
+SUPABASE_URL      # Kong URL, e.g. http://192.168.10.128:8000
 SUPABASE_AUTH_URL             # GoTrue direct URL, e.g. http://192.168.10.128:9999
 SUPABASE_SERVICE_KEY          # Service role key for admin operations
-NEXT_PUBLIC_SUPABASE_ANON_KEY # Anon key for client-side auth
+SUPABASE_ANON_KEY # Anon key for client-side auth
 ```
 
 ### Deployment

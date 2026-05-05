@@ -70,6 +70,12 @@ This document serves as the comprehensive technical reference for the **OpenTali
 - **Runtime:** Node.js 20.x, pnpm 10.x.
 - **Deployment:** Standalone mode, Systemd, Proxmox LXC.
 
+### 2.3 Supabase Proxy
+To ensure browser-side Supabase accessibility, all client-side requests are routed through a Next.js API proxy:
+- **Client URL:** `SUPABASE_URL` points to `https://talib.tajwali.uk/api/supabase`.
+- **Route Handler:** `app/api/supabase/[...path]/route.ts` proxies requests to the internal Supabase gateway (localhost:8000).
+- **Benefits:** Keeps Supabase behind the same domain/tunnel, simplifies CSP, and ensures consistent accessibility regardless of whether the code runs on server or browser.
+
 ---
 
 ## 3. Infrastructure (Environments)
@@ -200,7 +206,7 @@ Utility: `lib/server/resolve-model.ts`.
 
 | Variable | Required | Description |
 | :--- | :--- | :--- |
-| `NEXT_PUBLIC_SUPABASE_URL` | YES | Port 3001 (PostgREST) or 8000 (Gateway) |
+| `SUPABASE_URL` | YES | `https://talib.tajwali.uk/api/supabase` (Browser proxy) |
 | `SUPABASE_AUTH_URL` | YES | **CRITICAL:** Port 9999 (Direct GoTrue) |
 | `SUPABASE_SERVICE_KEY` | YES | Service role key for admin DB operations |
 | `SUPABASE_JWT_SECRET` | YES | Must match GoTrue/PostgREST config |

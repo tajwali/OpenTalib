@@ -61,9 +61,13 @@ nano .env.local
 ```
 
 > [!IMPORTANT]
-> **NEXT_PUBLIC_SUPABASE_URL** points to the Kong gateway (port 8000).
-> **SUPABASE_AUTH_URL** points DIRECTLY to GoTrue (port 9999).
+> **SUPABASE_URL** is used by the Next.js server to communicate with your Supabase stack. 
+> It does **NOT** need to be publicly accessible. You can use your internal network IP, 
+> localhost, or a Docker service name. 
+> **SUPABASE_AUTH_URL** must point DIRECTLY to GoTrue (port 9999).
 > Getting this wrong will cause 401 Unauthorized errors during login.
+> Note: All Supabase communication occurs on the server-side (Next.js API routes). 
+> The browser never communicates directly with Supabase.
 
 ### Step 7: Build the Application
 

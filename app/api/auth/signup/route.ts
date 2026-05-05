@@ -5,7 +5,7 @@ import { getSupabaseAdmin } from '@/lib/server/supabase-admin';
 import { checkRateLimit } from '@/lib/server/rate-limit';
 
 function makeAuthFetch() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseUrl = process.env.SUPABASE_URL!;
   const authUrl = process.env.SUPABASE_AUTH_URL;
   if (!authUrl) {
     console.error(
@@ -53,21 +53,17 @@ export async function POST(request: Request) {
   const { email, password, displayName, role = 'mature_student', inviteCode, grade, school } = body;
   const cookieStore = await cookies();
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      global: { fetch: makeAuthFetch() },
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
-        },
+  const supabase = createServerClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!, {
+    global: { fetch: makeAuthFetch() },
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
       },
     },
-  );
+  });
 
   // Validate role
   const validRoles = ['mature_student', 'school_student'];
