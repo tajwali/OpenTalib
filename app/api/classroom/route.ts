@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
     console.log(`[GET /api/classroom] Querying DB for ID: ${id}`);
     const { data: row, error: dbError } = await admin
       .from('classrooms')
-      .select('id, title, short_title, created_at, scenes, outlines')
+      .select('id, title, short_title, created_at, scenes, outline')
       .eq('id', id)
       .single();
 
@@ -114,7 +114,7 @@ export async function GET(request: NextRequest) {
         agentIds: [],
       },
       scenes: row.scenes as unknown[],
-      outlines: (row.outlines as unknown[]) || [],
+      outlines: (row.outline as unknown[]) || [],
       createdAt: row.created_at as string,
     };
 
