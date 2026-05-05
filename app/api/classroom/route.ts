@@ -73,19 +73,30 @@ export async function GET(request: NextRequest) {
 
     // 2. File not found — fall back to Supabase DB
     const admin = getSupabaseAdmin();
+    console.log(`[GET /api/classroom] Querying DB for ID: ${id}`);
     const { data: row, error: dbError } = await admin
       .from('classrooms')
       .select('id, title, short_title, created_at, scenes, outlines')
       .eq('id', id)
       .single();
 
+    if (dbError) {
+      console.error(`[GET /api/classroom] DB Error:`, dbError);
+    }
+    if (!row) {
+      console.log(`[GET /api/classroom] No row found in DB for ID: ${id}`);
+    }
+
     if (dbError || !row) {
       return apiError(API_ERROR_CODES.INVALID_REQUEST, 404, 'Classroom not found');
     }
-
+    
+    console.log(`[GET /api/classroom] Row found. Scenes length: ${row.scenes ? (Array.isArray(row.scenes) ? row.scenes.length : 'unknown') : 'null'}`);
+    
     // Fixed: Ensure we correctly check the length of scenes, which is a JSONB array
     const scenes = row.scenes;
     if (!scenes || (Array.isArray(scenes) && scenes.length === 0)) {
+      console.log(`[GET /api/classroom] Classroom scenes empty/null`);
       return apiError(API_ERROR_CODES.INVALID_REQUEST, 404, 'Course has no content');
     }
 
