@@ -29,6 +29,10 @@ describe('provider-config', () => {
     vi.resetModules();
     vi.unstubAllEnvs();
     yamlOverride = null;
+    vi.stubEnv('OPENAI_API_KEY', '');
+    vi.stubEnv('OPENAI_BASE_URL', '');
+    vi.stubEnv('OLLAMA_BASE_URL', '');
+    vi.stubEnv('ANTHROPIC_API_KEY', '');
   });
 
   describe('resolveApiKey', () => {

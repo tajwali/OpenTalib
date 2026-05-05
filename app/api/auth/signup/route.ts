@@ -106,9 +106,7 @@ export async function POST(request: Request) {
     const admin = getSupabaseAdmin();
 
     // Check if this is the first user
-    const { count } = await admin
-      .from('user_profiles')
-      .select('*', { count: 'exact', head: true });
+    const { count } = await admin.from('user_profiles').select('*', { count: 'exact', head: true });
     const isFirstUser = count === 0;
     const assignedRole = isFirstUser ? 'admin' : finalRole;
 
