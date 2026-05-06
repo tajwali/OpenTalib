@@ -17,7 +17,7 @@ const inter = localFont({
 });
 
 export const metadata: Metadata = {
-  title: 'OpenTalib',
+  title: 'OpenTalib | AI Classroom Platform',
   description:
     'The open-source AI interactive classroom. Upload a PDF to instantly generate an immersive, multi-agent learning experience.',
 };
