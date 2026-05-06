@@ -1,0 +1,12 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="white"/>
+  <rect x="400" y="165" width="400" height="300" rx="40" fill="#2563EB"/>
+  <path d="M520 255C520 243.954 528.954 235 540 235H660C671.046 235 680 243.954 680 255V375C680 386.046 671.046 395 660 395H540C528.954 395 520 386.046 520 375V255Z" fill="white" fill-opacity="0.2"/>
+  <path d="M550 285H650" stroke="white" stroke-width="15" stroke-linecap="round"/>
+  <path d="M550 325H650" stroke="white" stroke-width="15" stroke-linecap="round"/>
+  <path d="M550 365H600" stroke="white" stroke-width="15" stroke-linecap="round"/>
+  <circle cx="640" cy="365" r="25" fill="#2563EB" stroke="white" stroke-width="10"/>
+  <circle cx="640" cy="365" r="8" fill="white"/>
+  <text x="600" y="540" text-anchor="middle" fill="#1E293B" style="font-family: sans-serif; font-size: 80px; font-weight: bold;">OpenTalib</text>
+  <text x="600" y="600" text-anchor="middle" fill="#64748B" style="font-family: sans-serif; font-size: 32px;">AI Classroom Platform</text>
+</svg>

@@ -1,5 +1,5 @@
 <!-- <p align="center">
-  <img src="assets/logo-horizontal.png" alt="OpenTalib" width="420"/>
+  <img src="public/logo-horizontal.svg" alt="OpenTalib" width="420"/>
 </p> -->
 
 <p align="center">
