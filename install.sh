@@ -548,6 +548,9 @@ PORT=3000
 # TTS Configuration
 TTS_OPENAI_BASE_URL=$TTS_BASE_URL
 TTS_OPENAI_API_KEY=dummy
+
+# Media Storage Configuration
+MEDIA_STORAGE_PATH=$DATA_DIR
 EOF
 
 log_info "Installing application dependencies..."
@@ -563,7 +566,7 @@ pnpm db:setup || log_warn "db:setup failed, tables might already exist"
 log_info "Building the application..."
 pnpm build || die "Failed to build OpenTalib"
 
-# --- 9. Standalone Deployment & Media Symlink ---
+# --- 9. Standalone Deployment & Media Storage ---
 
 log_phase "Finalizing Deployment"
 
@@ -572,13 +575,9 @@ log_info "Preparing standalone files..."
 # We want to run from there for efficiency
 
 log_info "Creating media storage directory..."
-mkdir -p "$DATA_DIR/media"
+mkdir -p "$DATA_DIR/classrooms"
 chown -R www-data:www-data "$DATA_DIR"
 chmod -R 775 "$DATA_DIR"
-
-log_info "Creating symlink for media storage..."
-rm -rf "$INSTALL_DIR/public/media"
-ln -sf "$DATA_DIR/media" "$INSTALL_DIR/public/media"
 
 # --- 10. OpenTalib Systemd Service ---
 

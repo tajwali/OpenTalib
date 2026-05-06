@@ -4,7 +4,9 @@ import type { NextRequest } from 'next/server';
 import type { Scene, Stage } from '@/lib/types/stage';
 import type { SceneOutline } from '@/lib/types/generation';
 
-export const CLASSROOMS_DIR = path.join(process.cwd(), 'data', 'classrooms');
+export const CLASSROOMS_DIR = process.env.MEDIA_STORAGE_PATH
+  ? path.join(process.env.MEDIA_STORAGE_PATH, 'classrooms')
+  : path.join(process.cwd(), 'data', 'classrooms');
 export const CLASSROOM_JOBS_DIR = path.join(process.cwd(), 'data', 'classroom-jobs');
 
 async function ensureDir(dir: string) {

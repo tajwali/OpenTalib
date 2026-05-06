@@ -69,6 +69,9 @@ nano .env.local
 > Note: All Supabase communication occurs on the server-side (Next.js API routes). 
 > The browser never communicates directly with Supabase.
 
+> [!TIP]
+> **MEDIA_STORAGE_PATH** should be an absolute path outside the application directory (e.g., `/opt/opentalib-data`). This ensures that generated images and audio files persist across application rebuilds and updates.
+
 ### Step 7: Build the Application
 
 ```bash
@@ -89,7 +92,6 @@ Required for storing generated images and audio.
 
 ```bash
 sudo mkdir -p /opt/opentalib-data/classrooms
-sudo ln -s /opt/opentalib-data /opt/opentalib/.next/standalone/data
 sudo chown -R $USER:$USER /opt/opentalib-data
 ```
 
