@@ -4,9 +4,14 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from kokoro_onnx import Kokoro
+import numpy as np
 
 app = FastAPI()
 kokoro = Kokoro("kokoro-v0_19.onnx", "voices-v1.0.bin")
+
+# Fix for ONNXRuntime double vs float error in some versions
+# Cast voice embeddings to float32
+kokoro.voices = {k: v.astype(np.float32) for k, v in kokoro.voices.items()}
 
 VOICE_MAP = {
     "af": "af",

@@ -185,6 +185,40 @@ If you need to access your OpenTalib instance from outside your local network:
 1. Install `cloudflared` inside the LXC.
 2. Authenticate and create a tunnel pointing to `http://localhost:3000`.
 
+## Text to Speech (TTS)
+
+Kokoro TTS is automatically installed by `install.sh`. 
+If you are installing manually or using Docker, see the [Kokoro TTS section](#kokoro-tts-manual-installation) below.
+
+---
+
+## Kokoro TTS Manual Installation
+
+If you did not use the `install.sh` script, you can install Kokoro TTS manually:
+
+1. **Install Dependencies:**
+   ```bash
+   sudo apt install -y python3-pip python3-venv python3-dev libsndfile1 espeak-ng ffmpeg
+   ```
+
+2. **Setup Environment:**
+   ```bash
+   python3 -m venv /opt/kokoro-env
+   /opt/kokoro-env/bin/pip install kokoro-onnx fastapi uvicorn soundfile huggingface-hub
+   ```
+
+3. **Deploy Server:**
+   Create `/opt/kokoro-tts/server.py` with the server code (see `scripts/kokoro-server.py` in the repo).
+
+4. **Download Models:**
+   ```bash
+   cd /opt/kokoro-tts
+   /opt/kokoro-env/bin/python3 -c "from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='hexgrad/Kokoro-82M', filename='kokoro-v0_19.onnx', local_dir='.'); hf_hub_download(repo_id='hexgrad/Kokoro-82M', filename='voices-v1.0.bin', local_dir='.')"
+   ```
+
+5. **Create Systemd Service:**
+   Create `/etc/systemd/system/kokoro-tts.service` pointing to `/opt/kokoro-env/bin/uvicorn`.
+
 ---
 
 ## VERIFICATION SECTION

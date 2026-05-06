@@ -52,6 +52,10 @@ function log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+function log_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
 function die() {
     log_error "$1"
     echo -e "\n${RED}❌ Installation failed. Check $LOG_FILE for details.${NC}"
@@ -286,6 +290,147 @@ systemctl enable postgrest
 systemctl start postgrest
 check_service postgrest
 
+# --- 5.5. Kokoro TTS Installation ---
+
+log_phase "Kokoro TTS (Optional)"
+
+# Ask user if they want TTS
+echo ""
+echo -e "${YELLOW}Kokoro TTS provides high-quality AI voice narration for courses.${NC}"
+echo -e "${YELLOW}It requires ~800MB download and ~500MB RAM.${NC}"
+read -p "Install Kokoro TTS? (Recommended) [Y/n]: " INSTALL_TTS
+INSTALL_TTS=${INSTALL_TTS:-Y}
+
+if [[ "$INSTALL_TTS" =~ ^[Yy]$ ]]; then
+    log_info "Installing Kokoro TTS..."
+    
+    # Install system dependencies
+    apt-get install -y python3-pip python3-venv python3-dev \
+        libsndfile1 libsndfile1-dev ffmpeg espeak-ng || die "Failed to install TTS dependencies"
+    
+    # Create Python virtual environment
+    python3 -m venv /opt/kokoro-env
+    source /opt/kokoro-env/bin/activate
+    
+    # Install Python packages
+    pip install --quiet kokoro-onnx fastapi uvicorn soundfile numpy huggingface-hub || die "Failed to install TTS Python packages"
+    
+    # Create server directory
+    mkdir -p /opt/kokoro-tts
+    
+    # Write server.py
+    cat << 'PYEOF' > /opt/kokoro-tts/server.py
+import io
+import soundfile as sf
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
+from kokoro_onnx import Kokoro
+
+app = FastAPI()
+kokoro = Kokoro("kokoro-v0_19.onnx", "voices-v1.0.bin")
+
+VOICE_MAP = {
+    "af_heart": "af_heart",
+    "af_bella": "af_bella",
+    "am_adam": "am_adam",
+    "am_michael": "am_michael",
+    "bf_emma": "bf_emma",
+    "bm_george": "bm_george",
+    "male": "am_adam",
+    "female": "af_heart",
+    "alloy": "af_heart",
+    "echo": "am_adam",
+    "onyx": "am_adam",
+    "nova": "af_bella",
+    "shimmer": "bf_emma",
+}
+
+class TTSRequest(BaseModel):
+    model: str = "kokoro"
+    input: str
+    voice: str = "af_heart"
+    response_format: str = "mp3"
+    speed: float = 1.0
+
+@app.post("/v1/audio/speech")
+async def text_to_speech(req: TTSRequest):
+    voice = VOICE_MAP.get(req.voice, "af_heart")
+    try:
+        samples, sample_rate = kokoro.create(
+            req.input,
+            voice=voice,
+            speed=req.speed,
+            lang="en-us"
+        )
+        buf = io.BytesIO()
+        sf.write(buf, samples, sample_rate, format="mp3")
+        buf.seek(0)
+        return StreamingResponse(
+            buf,
+            media_type="audio/mpeg",
+            headers={"Content-Disposition": "attachment; filename=speech.mp3"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/health")
+async def health():
+    return {"status": "ok", "service": "kokoro-tts", "voices": list(VOICE_MAP.keys())}
+
+@app.get("/v1/models")
+async def models():
+    return {"data": [{"id": "kokoro", "object": "model"}]}
+PYEOF
+    
+    # Download Kokoro model files from HuggingFace
+    log_info "Downloading Kokoro model files (~330MB)..."
+    cd /opt/kokoro-tts
+    /opt/kokoro-env/bin/python3 -c "
+from huggingface_hub import hf_hub_download
+import os
+print('Downloading kokoro-v0_19.onnx...')
+hf_hub_download(repo_id='hexgrad/Kokoro-82M', filename='kokoro-v0_19.onnx', local_dir='.')
+print('Downloading voices-v1.0.bin...')
+hf_hub_download(repo_id='hexgrad/Kokoro-82M', filename='voices-v1.0.bin', local_dir='.')
+print('Models downloaded successfully')
+" || die "Failed to download Kokoro models"
+    
+    # Create systemd service
+    cat << EOF > /etc/systemd/system/kokoro-tts.service
+[Unit]
+Description=Kokoro TTS Server for OpenTalib
+After=network.target
+
+[Service]
+WorkingDirectory=/opt/kokoro-tts
+ExecStart=/opt/kokoro-env/bin/uvicorn server:app --host 0.0.0.0 --port 8880
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    systemctl daemon-reload
+    systemctl enable kokoro-tts
+    systemctl start kokoro-tts
+    
+    # Wait for startup (model loading takes ~15 seconds)
+    log_info "Waiting for Kokoro TTS to load model (~15 seconds)..."
+    sleep 20
+    
+    # Verify it is running
+    check_service kokoro-tts
+    curl -sf http://localhost:8880/health > /dev/null || log_warn "Kokoro health check failed"
+    
+    TTS_BASE_URL="http://localhost:8880"
+    log_success "Kokoro TTS installed and running on port 8880"
+else
+    log_warn "Skipping Kokoro TTS. You can install it later."
+    TTS_BASE_URL="http://localhost:5050"
+fi
+
 # --- 6. Nginx Proxy Configuration ---
 
 log_phase "Nginx Proxy Setup"
@@ -399,6 +544,10 @@ DATABASE_URL=postgresql://authenticator:$DB_PASSWORD@localhost:5432/opentalib
 # Application Settings
 NODE_ENV=production
 PORT=3000
+
+# TTS Configuration
+TTS_OPENAI_BASE_URL=$TTS_BASE_URL
+TTS_OPENAI_API_KEY=dummy
 EOF
 
 log_info "Installing application dependencies..."
@@ -512,6 +661,11 @@ echo -e "Access the platform at: ${YELLOW}http://$IP_ADDR:3000${NC}"
 echo -e "API Gateway (Nginx):    ${YELLOW}http://$IP_ADDR:8000${NC}"
 echo -e "Auth Service (GoTrue): ${YELLOW}http://$IP_ADDR:9999${NC}"
 echo -e "PostgREST API:         ${YELLOW}http://$IP_ADDR:3001${NC}"
+if [[ "$INSTALL_TTS" =~ ^[Yy]$ ]]; then
+    echo -e "Voice narration:       ${GREEN}✅ Kokoro TTS (port 8880)${NC}"
+else
+    echo -e "Voice narration:       ${YELLOW}⚠️ Not installed (configure TTS manually)${NC}"
+fi
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "Environment file:       $INSTALL_DIR/.env.local"
 echo -e "Log file:               $LOG_FILE"

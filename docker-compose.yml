@@ -57,6 +57,23 @@ services:
       - gotrue
       - postgrest
 
+  kokoro-tts:
+    image: python:3.11-slim
+    volumes:
+      - ./scripts/kokoro-server.py:/app/server.py
+      - kokoro_models:/opt/kokoro-tts
+    working_dir: /app
+    command: >
+      bash -c "
+        apt-get update && apt-get install -y libsndfile1 espeak-ng &&
+        pip install --quiet kokoro-onnx fastapi uvicorn soundfile huggingface-hub &&
+        python3 -c \"from huggingface_hub import hf_hub_download; hf_hub_download(repo_id='hexgrad/Kokoro-82M', filename='kokoro-v0_19.onnx', local_dir='/opt/kokoro-tts'); hf_hub_download(repo_id='hexgrad/Kokoro-82M', filename='voices-v1.0.bin', local_dir='/opt/kokoro-tts')\" &&
+        cd /opt/kokoro-tts && uvicorn /app/server:app --host 0.0.0.0 --port 8880
+      "
+    ports:
+      - "8880:8880"
+    restart: unless-stopped
+
   opentalib:
     build:
       context: .
@@ -85,3 +102,4 @@ services:
 volumes:
   db_data:
   media_storage:
+  kokoro_models:
