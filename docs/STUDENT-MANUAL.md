@@ -48,5 +48,5 @@ Some courses include scientific models or interactive simulations. You can manip
 
 Go to the **Profile** page (user icon) to:
 - Change your display name.
-- Update your gender (this helps the AI customize its interactions).
+- Update your gender (this helps the AI customize its interactions and select the most appropriate voice for your narration).
 - Change your password.

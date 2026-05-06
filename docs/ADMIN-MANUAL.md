@@ -4,24 +4,18 @@ The Admin Dashboard provides high-level control over the **OpenTalib** platform,
 
 ## First Time Setup
 
-After a fresh installation of OpenTalib, follow these steps to bootstrap your administrator account:
+OpenTalib is designed for easy bootstrapping on a fresh installation:
 
-1. **Register as a User:**
+1. **Initialize Database:**
+   - On the server, run `pnpm db:setup`. This creates all necessary tables and inserts default subjects.
+2. **Register the First User:**
    - Visit the `/signup` page in your browser.
-   - Register as an "Independent Learner" (Mature Student).
-2. **Promote to Admin via SQL:**
-   - On your server, execute the following SQL command to promote your account:
-     ```bash
-     sudo -u postgres psql -d postgres -c "
-     UPDATE public.user_profiles 
-     SET role = 'admin' 
-     WHERE id = (SELECT id FROM auth.users WHERE email = 'your-email@example.com');"
-     ```
-3. **Login and Configure:**
-   - Log out if you were logged in, then log back in. You will now be directed to the Admin Dashboard.
-   - **Create Teachers:** Register new users at `/signup` and promote their role to `teacher` via the Users tab.
-   - **Add Subjects:** Use the Subjects tab to add the educational categories your teachers will need.
-   - **Share Invite Codes:** Teachers can find their unique "Invite Code" on their dashboard to share with their students.
+   - You will see a banner indicating that you are the first user.
+   - Fill out the form. Upon creation, this account will automatically be assigned the `admin` role.
+3. **Configure the Platform:**
+   - Once logged in, you will be directed to the Admin Dashboard.
+   - **Manage Users:** You can now create additional accounts or change roles for existing users via the Users tab.
+   - **Subject Settings:** Ensure default subjects are present. You can add custom subjects with emojis if needed.
 
 ## Accessing the Dashboard
 
@@ -63,13 +57,25 @@ The **Statistics** tab provides real-time insights into platform usage:
 - **User Distribution:** See a breakdown of users by role.
 - **Recent Activity:** A log of the last 10 courses generated across the platform, including which teacher created them.
 
-## 4. Troubleshooting
+## 4. Maintenance & Infrastructure
 
-### Auth Issues
-If users report login failures, ensure the `SUPABASE_AUTH_URL` is correctly set in `.env.local` and that the file has been copied to the standalone directory. Refer to the **Troubleshooting Guide** in the `docs/` folder for more details.
+### Service Ports
+- **Next.js App:** Port 3000
+- **Nginx Proxy:** Port 8000
+- **GoTrue Auth:** Port 9999
+- **PostgREST:** Port 3001
+- **PostgreSQL:** Port 5432
+- **Kokoro TTS:** Port 8880
 
-### Media Generation Failures
-If images or TTS are not appearing:
-1. Check the **Statistics** tab to see if storage usage is increasing.
-2. Verify API keys for Google (Gemini/TTS) in the server environment.
-3. Check server logs using `journalctl -u opentalib -f`.
+### Updating the Platform
+To update the production environment to the latest version of OpenTalib, run:
+```bash
+bash /opt/opentalib/update.sh
+```
+This script handles pulling the latest code, rebuilding the standalone application (including `postbuild.js` automation), and restarting all relevant services.
+
+### Troubleshooting
+- **Auth Issues:** Ensure `SUPABASE_AUTH_URL` points to port 9999 and `SUPABASE_URL` points to the proxied URL (usually port 8000).
+- **Media Failures:** Verify `MEDIA_STORAGE_PATH` is set correctly in `.env.local`.
+- **Kokoro TTS:** If narration fails, check the service status: `systemctl status kokoro-tts`. Test the endpoint: `curl http://localhost:8880/health`.
+- **Logs:** Check application logs using `journalctl -u opentalib -f`.

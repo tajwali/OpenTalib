@@ -35,7 +35,7 @@ This document serves as the comprehensive technical reference for the **OpenTali
 +------------------+         +-----------------------v--------------------+
 |                  |         |           Next.js Application              |
 |     Browser      | <-----> |   (App Router, Server Actions, API)        |
-|  (React 19/UI)   |         |   Port 3001 (Internal) / 3000 (Proxy)      |
+|  (React 19/UI)   |         |   Port 3000 (Internal)                     |
 |                  |         +-----------+---------------^---------+------+
 +------------------+                     |               |         |
                                          |               |         | (Local Disk)
@@ -50,14 +50,19 @@ This document serves as the comprehensive technical reference for the **OpenTali
 |  |      GoTrue       |      |     PostgREST     |      |     PostgreSQL      |  |
 |  |  (Auth Engine)    | <--> |   (RESTful API)   | <--> |  (Database Layer)   |  |
 |  |     Port 9999     |      |     Port 3001     |      |      Port 5432      |  |
-|  +-------------------+      +-------------------+      +---------------------+  |
-+---------------------------------------------------------------------------------+
-                                         ^
-                                         | (Internal/External)
-                                         |
-                                  +------+----------------+
-                                  |      Local LLM        |
-                                  | (Ollama at .41:11434) |
+|  +---------^---------+      +---------^---------+      +---------------------+  |
+|            |                          |                                         |
+|  +---------v--------------------------v----------+      +---------------------+  |
+|  |             Nginx Reverse Proxy               |      |     Kokoro TTS      |  |
+|  |               Port 8000 / 443                 | <--> |   (Voice Service)   |  |
+|  +-----------------------------------------------+      |      Port 8880      |  |
++--------------------------------------------------------+---------------------+  |
+                                         ^                                         |
+                                         | (Internal/External)                     |
+                                         |                                         |
+                                  +------+----------------+                        |
+                                  |      Local LLM        |                        |
+                                  | (Ollama at .41:11434) | <----------------------+
                                   +-----------------------+
 ```
 
@@ -82,20 +87,22 @@ To ensure browser-side Supabase accessibility, all client-side requests are rout
 
 ### 3.1 Production Environment (All-in-One)
 - **Host:** 192.168.10.142 (Ubuntu 24.04 LXC)
-- **External URL:** `https://opentalib.tajwali.uk` (via Cloudflare Tunnel)
+- **External URL:** `https://talib.tajwali.uk` (via Cloudflare Tunnel)
 - **App Path:** `/opt/opentalib` (branch: `main`)
-- **Data Path:** `/opt/opentalib-data` (Persistent media storage)
+- **Data Path:** `/opt/opentalib-data` (Persistent media storage, configured via `MEDIA_STORAGE_PATH`)
 - **Services:**
-  - `postgresql.service` (Port 5432)
-  - `gotrue.service` (Port 9999)
-  - `postgrest.service` (Port 3001)
-  - `opentalib.service` (Port 3000)
+  - `postgresql.service` (Port 5432 - PostgreSQL 15)
+  - `gotrue.service` (Port 9999 - GoTrue Auth)
+  - `postgrest.service` (Port 3001 - PostgREST)
+  - `nginx.service` (Port 8000 - Local Proxy)
+  - `kokoro-tts.service` (Port 8880 - Local Voice Narration)
+  - `opentalib.service` (Port 3000 - Next.js Application)
 
 ### 3.2 Development Environment
 - **Host:** 192.168.10.30 (Ubuntu 22.04 LXC)
-- **App Path:** `/opt/openmaic-dev` (branch: `multiuser-dev`)
+- **App Path:** `/opt/opentalib-dev` (branch: `multiuser-dev`)
 - **Database:** Connects to Shared Supabase at `192.168.10.129`.
-- **Service:** `openmaic-dev.service` (Port 3001)
+- **Service:** `opentalib-dev.service` (Port 3001)
 
 ### 3.3 Shared Services
 - **Shared Supabase:** 192.168.10.129 (External DB/Auth for dev LXC).
@@ -170,7 +177,9 @@ Found in `lib/supabase/server.ts`. It initializes the `@supabase/ssr` client wit
 
 ### 6.3 RBAC (Role-Based Access Control)
 Roles are enforced using `lib/server/require-role.ts`.
-- **`admin`**: Full platform control (User management, system stats).
+- **First User:** The first account created on a fresh installation automatically becomes an `admin`. The UI displays a banner/note during this process.
+- **admin**: Full platform control (User management, system stats).
+
 - **`teacher`**: Can generate courses, manage their own students, and assign courses.
 - **`mature_student`**: Self-directed learners. Can generate their own courses.
 - **`school_student`**: Can only access courses assigned by their teacher.
@@ -225,27 +234,36 @@ Models are specified as `provider:model-id` (e.g., `google:gemini-2.0-flash`).
 Requires `ALLOW_LOCAL_NETWORKS=true` and `OLLAMA_BASE_URL=http://192.168.10.41:11434/v1`.
 
 ### 9.3 Media Storage
-Generated images and audio are stored on the filesystem at `/opt/opentalib-data`.
-The application directory `/opt/opentalib/.next/standalone/data` is a **symlink** to this path to ensure persistence across builds.
+Generated images and audio are stored on the filesystem.
+- **Environment Variable:** `MEDIA_STORAGE_PATH` (e.g., `/opt/opentalib-data`).
+- This path should be outside the application directory to ensure media survives rebuilds.
+
+### 9.4 Kokoro TTS Integration
+Local voice narration is provided by Kokoro TTS (running on port 8880).
+- **Auto-Selection:** Voices are selected automatically based on the user's gender profile.
+- **Voices:** `af_sarah` (female), `am_adam` (male).
+- **Status:** `systemctl status kokoro-tts`.
+- **Health Check:** `curl http://localhost:8880/health`.
 
 ---
 
 ## 10. Operations
 
-### 10.1 Deployment (Dev -> Prod)
-1. Commit changes to `multiuser-dev`.
-2. Merge into `main` and push.
-3. SSH into 192.168.10.142.
-4. `cd /opt/opentalib && git pull`.
-5. `pnpm build`.
-6. `cp -r .next/static .next/standalone/.next/`.
-7. `cp -r public .next/standalone/`.
-8. `cp .env.local .next/standalone/.env.local`.
-9. `systemctl restart opentalib`.
+### 10.1 Deployment (Using Scripts)
+- **Installation:** Use `bash install.sh` on a fresh Ubuntu 24.04 LXC. This installs all dependencies (Node.js, PostgreSQL, GoTrue, PostgREST, Nginx, Kokoro TTS) and generates JWT secrets automatically.
+- **Update Production:** Run `bash /opt/opentalib/update.sh`. This script pulls the latest code from `main`, builds it, and restarts the services.
 
-### 10.2 Database Migrations
-Always apply migrations in numerical order:
-`sudo -u postgres psql -d postgres < supabase/migrations/00X_name.sql`
+### 10.2 Build Process (`pnpm build`)
+The build process is now fully automated via `postbuild.js`:
+1. `pnpm build` triggers Next.js standalone build.
+2. `postbuild.js` runs automatically after the build completes.
+3. It copies `public/`, `.next/static/`, and `.env.local` to the standalone directory.
+4. No manual file copying or symlinks are required anymore.
+
+### 10.3 Database Setup
+- **Initial Setup:** Run `pnpm db:setup` on a fresh installation to create all tables and insert default subjects.
+- **Incremental Migrations:** Apply manual SQL migrations if needed:
+  `sudo -u postgres psql -d postgres < supabase/migrations/00X_name.sql`
 
 ---
 

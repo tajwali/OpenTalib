@@ -27,6 +27,7 @@ OpenTalib allows you to create immersive, multi-agent courses from simple prompt
    - **Subject:** Manually select a subject or let the AI classify it for you.
    - **Language:** Force a specific language or leave it as "Auto".
 5. **Generate:** The AI will first create an outline, then generate the full scenes (slides, quizzes, interactives).
+6. **Narration:** Every slide includes AI-generated voice narration. OpenTalib automatically selects a high-quality voice (via the built-in Kokoro TTS) based on the teacher's profile settings to provide a consistent and professional learning experience.
 
 > [!TIP]
 > Courses are saved incrementally. Even if your browser crashes, the scenes generated so far will be saved to your dashboard.
