@@ -4,6 +4,21 @@ const path = require('path');
 const ROOT = process.cwd();
 const STANDALONE = path.join(ROOT, '.next', 'standalone');
 
+// Load .env.local manually since Node.js does not auto-load it
+const envPath = path.join(ROOT, '.env.local');
+if (fs.existsSync(envPath)) {
+  const envContent = fs.readFileSync(envPath, 'utf-8');
+  for (const line of envContent.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eqIndex = trimmed.indexOf('=');
+    if (eqIndex === -1) continue;
+    const key = trimmed.slice(0, eqIndex).trim();
+    const value = trimmed.slice(eqIndex + 1).trim();
+    if (!process.env[key]) process.env[key] = value;
+  }
+}
+
 function copyDir(src, dest) {
   if (!fs.existsSync(src)) {
     console.log(`  Skipping ${src} (not found)`);
@@ -25,22 +40,13 @@ function copyFile(src, dest) {
 console.log('\n🔧 Running OpenTalib post-build setup...\n');
 
 // 1. Copy static assets
-copyDir(
-  path.join(ROOT, '.next', 'static'),
-  path.join(STANDALONE, '.next', 'static')
-);
+copyDir(path.join(ROOT, '.next', 'static'), path.join(STANDALONE, '.next', 'static'));
 
 // 2. Copy public folder
-copyDir(
-  path.join(ROOT, 'public'),
-  path.join(STANDALONE, 'public')
-);
+copyDir(path.join(ROOT, 'public'), path.join(STANDALONE, 'public'));
 
 // 3. Copy .env.local to standalone
-copyFile(
-  path.join(ROOT, '.env.local'),
-  path.join(STANDALONE, '.env.local')
-);
+copyFile(path.join(ROOT, '.env.local'), path.join(STANDALONE, '.env.local'));
 
 // 4. Create media storage directory
 const mediaPath = process.env.MEDIA_STORAGE_PATH;
