@@ -43,6 +43,7 @@ class TTSRequest(BaseModel):
     speed: float = 1.0
 
 @app.post("/v1/audio/speech")
+@app.post("/audio/speech")
 async def text_to_speech(req: TTSRequest):
     voice = VOICE_MAP.get(req.voice, "af_sarah")
     try:
