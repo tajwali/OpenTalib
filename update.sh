@@ -1,12 +1,14 @@
 #!/bin/bash
 set -e
 cd /opt/opentalib
+echo "Pulling latest code..."
 git pull origin main
+echo "Installing dependencies..."
 pnpm install
+echo "Building (postbuild runs automatically)..."
 pnpm build
-cp -r .next/static .next/standalone/.next/
-cp -r public .next/standalone/
-cp .env.local .next/standalone/.env.local
-mkdir -p /opt/opentalib-data/classrooms
+echo "Restarting service..."
 systemctl restart opentalib
-echo -e "\033[0;32m✅ OpenTalib updated successfully\033[0m"
+sleep 3
+systemctl status opentalib | head -5
+echo "✅ Update complete!"

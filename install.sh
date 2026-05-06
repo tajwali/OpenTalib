@@ -592,32 +592,15 @@ After=network.target postgresql.service gotrue.service postgrest.service
 [Service]
 Type=simple
 User=root
-WorkingDirectory=$INSTALL_DIR
-EnvironmentFile=$INSTALL_DIR/.env.local
+WorkingDirectory=$INSTALL_DIR/.next/standalone
+EnvironmentFile=$INSTALL_DIR/.next/standalone/.env.local
 ExecStart=/usr/bin/node server.js
-# Note: Next.js standalone server is usually at .next/standalone/server.js
-# We need to make sure we are pointing to the right place.
-# If using standard 'next start', it would be:
-# ExecStart=/usr/local/bin/pnpm start
 Restart=always
 RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
 EOF
-
-# Adjusting for standalone if needed
-if [[ -f "$INSTALL_DIR/.next/standalone/server.js" ]]; then
-    log_info "Standalone build detected, configuring service accordingly."
-    sed -i "s|WorkingDirectory=$INSTALL_DIR|WorkingDirectory=$INSTALL_DIR/.next/standalone|" /etc/systemd/system/opentalib.service
-    sed -i "s|ExecStart=/usr/bin/node server.js|ExecStart=/usr/bin/node server.js|" /etc/systemd/system/opentalib.service
-    # Copy public and static to standalone
-    cp -r "$INSTALL_DIR/public" "$INSTALL_DIR/.next/standalone/"
-    cp -r "$INSTALL_DIR/.next/static" "$INSTALL_DIR/.next/standalone/.next/"
-else
-    log_info "Using standard pnpm start for the service."
-    sed -i "s|ExecStart=/usr/bin/node server.js|ExecStart=/usr/local/bin/pnpm start|" /etc/systemd/system/opentalib.service
-fi
 
 systemctl daemon-reload
 systemctl enable opentalib
