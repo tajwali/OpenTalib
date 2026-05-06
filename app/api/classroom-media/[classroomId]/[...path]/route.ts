@@ -20,6 +20,12 @@ const MIME_TYPES: Record<string, string> = {
 // Files larger than this are streamed in chunks; smaller ones are buffered
 const STREAM_THRESHOLD = 10 * 1024 * 1024; // 10 MB
 
+const NO_CACHE_HEADERS = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate',
+  'CDN-Cache-Control': 'no-store',
+  'Cloudflare-CDN-Cache-Control': 'no-store',
+};
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ classroomId: string; path: string[] }> },
@@ -28,19 +34,22 @@ export async function GET(
 
   // Validate classroomId
   if (!isValidClassroomId(classroomId)) {
-    return NextResponse.json({ error: 'Invalid classroom ID' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Invalid classroom ID' },
+      { status: 400, headers: NO_CACHE_HEADERS },
+    );
   }
 
   // Validate path segments — no traversal
   const joined = pathSegments.join('/');
   if (joined.includes('..') || pathSegments.some((s) => s.includes('\0'))) {
-    return NextResponse.json({ error: 'Invalid path' }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid path' }, { status: 400, headers: NO_CACHE_HEADERS });
   }
 
   // Only allow media/ and audio/ subdirectories
   const subDir = pathSegments[0];
   if (subDir !== 'media' && subDir !== 'audio') {
-    return NextResponse.json({ error: 'Invalid path' }, { status: 404 });
+    return NextResponse.json({ error: 'Invalid path' }, { status: 404, headers: NO_CACHE_HEADERS });
   }
 
   const filePath = path.join(CLASSROOMS_DIR, classroomId, ...pathSegments);
@@ -64,12 +73,12 @@ export async function GET(
     }
 
     if (!realPath.startsWith(realBase + path.sep) && realPath !== realBase) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Not found' }, { status: 404, headers: NO_CACHE_HEADERS });
     }
 
     const stat = await fs.stat(realPath);
     if (!stat.isFile()) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Not found' }, { status: 404, headers: NO_CACHE_HEADERS });
     }
 
     const ext = path.extname(realPath).toLowerCase();
@@ -153,8 +162,11 @@ export async function GET(
     });
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Not found' }, { status: 404, headers: NO_CACHE_HEADERS });
     }
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal error' },
+      { status: 500, headers: NO_CACHE_HEADERS },
+    );
   }
 }
