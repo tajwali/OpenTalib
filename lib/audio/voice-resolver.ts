@@ -51,7 +51,7 @@ export function resolveAgentVoice(
 
     // ── Kokoro Gender-based Voice Selection ──
     if (first.providerId === 'openai-tts') {
-      const voiceId = gender?.toLowerCase() === 'male' ? 'am_adam' : 'af_heart';
+      const voiceId = gender?.toLowerCase() === 'male' ? 'am_adam' : 'af_sarah';
       // Ensure the selected voice actually exists in the provider's voice list
       if (first.voices.some((v) => v.id === voiceId)) {
         return {

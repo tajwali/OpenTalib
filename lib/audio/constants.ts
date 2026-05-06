@@ -183,8 +183,8 @@ export const TTS_PROVIDERS: Record<BuiltInTTSProviderId, TTSProviderConfig> = {
       },
       // Kokoro Voices (OpenAI-compatible)
       {
-        id: 'af_heart',
-        name: 'Heart (女)',
+        id: 'af_sarah',
+        name: 'Sarah (女)',
         language: 'en',
         gender: 'female',
         description: 'Kokoro Female - Warm',
@@ -195,6 +195,20 @@ export const TTS_PROVIDERS: Record<BuiltInTTSProviderId, TTSProviderConfig> = {
         language: 'en',
         gender: 'female',
         description: 'Kokoro Female - Professional',
+      },
+      {
+        id: 'af_nicole',
+        name: 'Nicole (女)',
+        language: 'en',
+        gender: 'female',
+        description: 'Kokoro Female - Natural',
+      },
+      {
+        id: 'af_sky',
+        name: 'Sky (女)',
+        language: 'en',
+        gender: 'female',
+        description: 'Kokoro Female - Bright',
       },
       {
         id: 'am_adam',
@@ -218,11 +232,25 @@ export const TTS_PROVIDERS: Record<BuiltInTTSProviderId, TTSProviderConfig> = {
         description: 'Kokoro Female - British',
       },
       {
+        id: 'bf_isabella',
+        name: 'Isabella (女 - 英音)',
+        language: 'en-GB',
+        gender: 'female',
+        description: 'Kokoro Female - British Soft',
+      },
+      {
         id: 'bm_george',
         name: 'George (男 - 英音)',
         language: 'en-GB',
         gender: 'male',
         description: 'Kokoro Male - British',
+      },
+      {
+        id: 'bm_lewis',
+        name: 'Lewis (男 - 英音)',
+        language: 'en-GB',
+        gender: 'male',
+        description: 'Kokoro Male - British Formal',
       },
     ],
     supportedFormats: ['mp3', 'opus', 'aac', 'flac'],
