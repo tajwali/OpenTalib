@@ -20,6 +20,8 @@ const eslintConfig = defineConfig([
     '.worktrees/**',
     // Playwright e2e tests (not React code):
     'e2e/**',
+    // Build scripts:
+    'scripts/**',
   ]),
   {
     rules: {
