@@ -14,7 +14,6 @@
 
 import { NextRequest } from 'next/server';
 import { streamLLM } from '@/lib/ai/llm';
-import { buildSystemPromptHeader } from '@/lib/server/pedagogy-resolver';
 import { buildPrompt, PROMPT_IDS } from '@/lib/generation/prompts';
 import {
   formatImageDescription,
@@ -138,17 +137,14 @@ export async function POST(req: NextRequest) {
       return apiError('MISSING_REQUIRED_FIELD', 400, 'Requirements are required');
     }
 
-    const { requirements, pdfText, pdfImages, imageMapping, researchContext, agents, pedagogyProfile } = body as {
+    const { requirements, pdfText, pdfImages, imageMapping, researchContext, agents } = body as {
       requirements: UserRequirements;
       pdfText?: string;
       pdfImages?: PdfImage[];
       imageMapping?: ImageMapping;
       researchContext?: string;
       agents?: AgentInfo[];
-      pedagogyProfile?: any;
     };
-
-    const pedagogyHeader = pedagogyProfile ? buildSystemPromptHeader(pedagogyProfile) : '';
 
     // Build user profile string for language inference context
     const userProfileText =
@@ -249,16 +245,6 @@ export async function POST(req: NextRequest) {
 
     if (!prompts) {
       return apiError('INTERNAL_ERROR', 500, 'Prompt template not found');
-    }
-
-    // Prepend pedagogy header if present
-    if (pedagogyHeader) {
-      prompts.system = pedagogyHeader + '\n\n' + prompts.system;
-    }
-
-    // Inject page structure rule if present
-    if (pedagogyProfile?.pageStructureRule) {
-      prompts.system += '\n\n## PAGE STRUCTURE RULE\n' + pedagogyProfile.pageStructureRule;
     }
 
     log.info(

@@ -47,6 +47,7 @@ import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useDraftCache } from '@/lib/hooks/use-draft-cache';
 import { SpeechButton } from '@/components/audio/speech-button';
+import { BOARD_REGISTRY } from '@/lib/server/board-registry';
 
 const log = createLogger('Home');
 
@@ -67,6 +68,9 @@ interface FormState {
   webSearch: boolean;
   grade: string; // 'none' | 'all' | 'Grade 1' ... 'Grade 10'
   subjectId: string; // 'auto' | uuid
+  board: string;
+  studentContext: string;
+  instructionLanguage: string;
 }
 
 const initialFormState: FormState = {
@@ -76,6 +80,9 @@ const initialFormState: FormState = {
   webSearch: false,
   grade: 'none',
   subjectId: 'auto',
+  board: 'Other',
+  studentContext: '',
+  instructionLanguage: 'English',
 };
 
 function HomePage() {
@@ -317,7 +324,19 @@ function HomePage() {
         webSearch: form.webSearch || undefined,
         grade: form.grade !== 'none' ? form.grade : null,
         subjectId: form.subjectId !== 'auto' ? form.subjectId : null,
+        board: form.board,
+        studentContext: form.studentContext,
+        instructionLanguage: form.instructionLanguage,
       };
+
+      // Resolve pedagogy profile
+      const pedagogyRes = await fetch('/api/generate/resolve-pedagogy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requirements),
+      });
+      const pedagogyData = await pedagogyRes.json();
+      const pedagogyProfile = pedagogyData.pedagogyProfile;
 
       let pdfStorageKey: string | undefined;
       let pdfFileName: string | undefined;
@@ -342,6 +361,7 @@ function HomePage() {
       const sessionState = {
         sessionId: nanoid(),
         requirements,
+        pedagogyProfile,
         pdfText: '',
         pdfImages: [],
         imageStorageIds: [],
@@ -631,6 +651,35 @@ function HomePage() {
                   </option>
                 ))}
               </select>
+              <select
+                value={form.board}
+                onChange={(e) => updateForm('board', e.target.value)}
+                className="text-xs rounded-lg border border-border bg-background px-2.5 py-1.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 cursor-pointer"
+              >
+                {Object.keys(BOARD_REGISTRY).map((b) => (
+                  <option key={b} value={b}>
+                    {b}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={form.instructionLanguage}
+                onChange={(e) => updateForm('instructionLanguage', e.target.value)}
+                className="text-xs rounded-lg border border-border bg-background px-2.5 py-1.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 cursor-pointer"
+              >
+                {['English', 'English + Urdu', 'English + Arabic', 'Urdu', 'Other'].map((l) => (
+                  <option key={l} value={l}>
+                    {l}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="text"
+                value={form.studentContext}
+                onChange={(e) => updateForm('studentContext', e.target.value)}
+                placeholder="Student context (e.g. ESL, visual learner)"
+                className="text-xs rounded-lg border border-border bg-background px-2.5 py-1.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 flex-1 min-w-[200px]"
+              />
             </div>
 
             {/* Toolbar row */}

@@ -409,7 +409,6 @@ function GenerationPreviewContent() {
               pdfImages: currentSession.pdfImages,
               imageMapping,
               researchContext: currentSession.researchContext,
-              pedagogyProfile: session.pedagogyProfile,
             }),
             signal,
           })
@@ -616,7 +615,6 @@ function GenerationPreviewContent() {
               availableAvatars: allAvatars.map((a) => a.path),
               avatarDescriptions: allAvatars.map((a) => ({ path: a.path, desc: a.desc })),
               availableVoices: getAvailableVoicesForGeneration(),
-              pedagogyProfile: session.pedagogyProfile,
             }),
             signal,
           });
@@ -733,7 +731,6 @@ function GenerationPreviewContent() {
           stageId: stage.id,
           agents,
           languageDirective,
-          pedagogyProfile: session.pedagogyProfile,
         }),
         signal,
       });

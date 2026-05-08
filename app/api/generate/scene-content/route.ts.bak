@@ -17,7 +17,6 @@ import type { AgentInfo } from '@/lib/generation/generation-pipeline';
 import type { SceneOutline, PdfImage, ImageMapping } from '@/lib/types/generation';
 import { createLogger } from '@/lib/logger';
 import { resolveModelFromHeaders } from '@/lib/server/resolve-model';
-import { buildSystemPromptHeader } from '@/lib/server/pedagogy-resolver';
 
 const log = createLogger('Scene Content API');
 
@@ -58,7 +57,6 @@ export async function POST(req: NextRequest) {
           stageId,
           agents,
           languageDirective,
-          pedagogyProfile,
         } = body as {
           outline: SceneOutline;
           allOutlines: SceneOutline[];
@@ -73,7 +71,6 @@ export async function POST(req: NextRequest) {
           stageId: string;
           agents?: AgentInfo[];
           languageDirective?: string;
-          pedagogyProfile?: any;
         };
 
         // Validate required fields
@@ -116,20 +113,17 @@ export async function POST(req: NextRequest) {
         // Detect vision capability
         const hasVision = !!modelInfo?.capabilities?.vision;
 
-        const pedagogyHeader = pedagogyProfile ? buildSystemPromptHeader(pedagogyProfile) : '';
-
         // Vision-aware AI call function
         const aiCall = async (
           systemPrompt: string,
           userPrompt: string,
           images?: Array<{ id: string; src: string }>,
         ): Promise<string> => {
-          const finalSystemPrompt = pedagogyHeader ? pedagogyHeader + '\n\n' + systemPrompt : systemPrompt;
           if (images?.length && hasVision) {
             const result = await callLLM(
               {
                 model: languageModel,
-                system: finalSystemPrompt,
+                system: systemPrompt,
                 messages: [
                   {
                     role: 'user' as const,
@@ -145,7 +139,7 @@ export async function POST(req: NextRequest) {
           const result = await callLLM(
             {
               model: languageModel,
-              system: finalSystemPrompt,
+              system: systemPrompt,
               prompt: userPrompt,
               maxOutputTokens: modelInfo?.outputWindow,
             },
