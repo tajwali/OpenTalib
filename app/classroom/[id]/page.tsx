@@ -1,6 +1,7 @@
 'use client';
 
 import { Stage } from '@/components/stage';
+import { LessonTutor } from '@/components/chat/LessonTutor';
 import { ThemeProvider } from '@/lib/hooks/use-theme';
 import { useStageStore } from '@/lib/store';
 import { loadImageMapping } from '@/lib/utils/image-storage';
@@ -146,7 +147,10 @@ export default function ClassroomDetailPage() {
     };
   }, [classroomId, loadClassroom, stop]);
 
+  const stage = useStageStore((s) => s.stage);
   const currentSceneId = useStageStore((s) => s.currentSceneId);
+  const scenes = useStageStore((s) => s.scenes);
+  const currentScene = scenes.find((s) => s.id === currentSceneId);
 
   // Track course completion and progress when user reaches scenes
   useEffect(() => {
@@ -241,6 +245,15 @@ export default function ClassroomDetailPage() {
           ) : (
             <Stage onRetryOutline={retrySingleOutline} />
           )}
+          <LessonTutor
+            courseId={classroomId}
+            sceneTitle={currentScene?.title ?? ''}
+            sceneText={(currentScene as any)?.description ?? ''}
+            grade={(stage as any)?.grade ?? null}
+            board={(stage as any)?.board ?? 'Other'}
+            subject={(stage as any)?.subject ?? ''}
+            agentName={(stage as any)?.agentName ?? 'your teacher'}
+          />
         </div>
       </MediaStageProvider>
     </ThemeProvider>
