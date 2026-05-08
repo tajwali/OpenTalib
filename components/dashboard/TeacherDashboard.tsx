@@ -18,6 +18,7 @@ import {
   UserCircle,
   Pencil,
   Trash2,
+  Activity,
 } from 'lucide-react';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -103,6 +104,12 @@ interface TeacherStats {
   }[];
 }
 
+interface HeatmapData {
+  students: { id: string; display_name: string }[];
+  heatmap: Record<string, Record<string, number>>;
+  atRisk: string[];
+}
+
 type Tab = 'students' | 'courses' | 'assignments' | 'exam-results' | 'analytics';
 
 interface ExamResultRow {
@@ -149,6 +156,8 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteConfirmCourse, setDeleteConfirmCourse] = useState<Course | null>(null);
   const [teacherStats, setTeacherStats] = useState<TeacherStats | null>(null);
+  const [heatmapData, setHeatmapData] = useState<HeatmapData | null>(null);
+
   // Student edit modal
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [editStudentName, setEditStudentName] = useState('');
@@ -161,36 +170,24 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
     setLoading(true);
     const safeJson = (r: Response) => (r.ok ? r.json().catch(() => null) : Promise.resolve(null));
     Promise.all([
-      fetch('/api/teacher/invite-code')
-        .then(safeJson)
-        .catch(() => null),
-      fetch('/api/teacher/students')
-        .then(safeJson)
-        .catch(() => null),
-      fetch('/api/teacher/courses')
-        .then(safeJson)
-        .catch(() => null),
-      fetch('/api/teacher/assign-course')
-        .then(safeJson)
-        .catch(() => null),
-      fetch('/api/subjects')
-        .then(safeJson)
-        .catch(() => null),
-      fetch('/api/teacher/stats')
-        .then(safeJson)
-        .catch(() => null),
+      fetch('/api/teacher/invite-code').then(safeJson).catch(() => null),
+      fetch('/api/teacher/students').then(safeJson).catch(() => null),
+      fetch('/api/teacher/courses').then(safeJson).catch(() => null),
+      fetch('/api/teacher/assign-course').then(safeJson).catch(() => null),
+      fetch('/api/subjects').then(safeJson).catch(() => null),
+      fetch('/api/teacher/stats').then(safeJson).catch(() => null),
+      fetch('/api/teacher/heatmap').then(safeJson).catch(() => null),
     ])
-      .then(([ic, studs, crses, asns, subs, stats]) => {
+      .then(([ic, studs, crses, asns, subs, stats, heat]) => {
         setInviteCode((ic as { invite_code?: string } | null)?.invite_code ?? null);
         setStudents(Array.isArray(studs) ? (studs as Student[]) : []);
         setCourses(Array.isArray(crses) ? (crses as Course[]) : []);
         setAssignments(Array.isArray(asns) ? (asns as Assignment[]) : []);
         setSubjects(Array.isArray(subs) ? (subs as Subject[]) : []);
         setTeacherStats(stats as TeacherStats | null);
+        setHeatmapData(heat as HeatmapData | null);
       })
-      .catch(() => {
-        // Never let a fetch failure crash the dashboard
-      })
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
@@ -205,12 +202,8 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subjectId: subjectId === 'none' ? null : subjectId }),
       });
-      if (res.ok) {
-        loadAll();
-      }
-    } catch {
-      /* ignore */
-    }
+      if (res.ok) loadAll();
+    } catch {}
   };
 
   const unassignCourse = async (assignment: Assignment) => {
@@ -224,9 +217,7 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
           student_id: assignment.student_id,
         }),
       });
-      if (res.ok) {
-        setAssignments((prev) => prev.filter((a) => a.id !== assignment.id));
-      }
+      if (res.ok) setAssignments((prev) => prev.filter((a) => a.id !== assignment.id));
     } finally {
       setUnassigningId(null);
     }
@@ -235,110 +226,22 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
   const deleteCourse = async (course: Course) => {
     setDeletingId(course.id);
     try {
-      const res = await fetch(`/api/user/classrooms?id=${course.id}`, {
-        method: 'DELETE',
-      });
+      const res = await fetch(`/api/user/classrooms?id=${course.id}`, { method: 'DELETE' });
       if (res.ok) {
         setCourses((prev) => prev.filter((c) => c.id !== course.id));
         setDeleteConfirmCourse(null);
-        loadAll(); // Refresh everything to update stats/assignments
+        loadAll();
       }
     } finally {
       setDeletingId(null);
     }
   };
 
-  const loadExamResults = () => {
-    setExamResultsLoading(true);
-    fetch('/api/teacher/exam-results')
-      .then((r) => (r.ok ? r.json() : []))
-      .then((data: ExamWithResults[]) => setExamResults(Array.isArray(data) ? data : []))
-      .catch(() => setExamResults([]))
-      .finally(() => setExamResultsLoading(false));
-  };
-
-  useEffect(() => {
-    if (tab === 'exam-results' && examResults.length === 0 && !examResultsLoading) {
-      loadExamResults();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab]);
-
-  const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    router.push('/login');
-    router.refresh();
-  };
-
-  const openEditStudent = (s: Student) => {
-    setEditingStudent(s);
-    setEditStudentName(s.display_name);
-    setEditStudentGrade(s.grade ?? '');
-    setEditStudentPassword('');
-    setEditStudentError(null);
-  };
-
-  const handleSaveStudent = async () => {
-    if (!editingStudent) return;
-    setEditStudentSaving(true);
-    setEditStudentError(null);
-    try {
-      const patch: Record<string, string> = { student_id: editingStudent.id };
-      if (editStudentName.trim()) patch.display_name = editStudentName.trim();
-      patch.grade = editStudentGrade;
-      if (editStudentPassword) patch.new_password = editStudentPassword;
-      const res = await fetch('/api/teacher/students', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(patch),
-      });
-      const data = (await res.json()) as { error?: string };
-      if (!res.ok) {
-        setEditStudentError(data.error ?? 'Failed');
-        return;
-      }
-      setEditingStudent(null);
-      loadAll();
-    } catch {
-      setEditStudentError('Network error');
-    } finally {
-      setEditStudentSaving(false);
-    }
-  };
-
-  const copyInviteCode = () => {
-    if (!inviteCode) return;
-    navigator.clipboard.writeText(inviteCode).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  };
-
-  const regenerateCode = async () => {
-    const res = await fetch('/api/teacher/invite-code', { method: 'POST' });
-    const data = await res.json();
-    if (data.invite_code) setInviteCode(data.invite_code);
-  };
-
-  const openStudentProgress = async (studentId: string) => {
-    const res = await fetch(`/api/teacher/student-progress?student_id=${studentId}`);
-    if (res.ok) setSelectedStudent(await res.json());
-  };
-
-  const openAssignModal = (course: Course) => {
-    setAssignModal(course);
-    setSelectedStudentIds(new Set());
-    setAssignResult(null);
-  };
-
   const toggleStudent = (id: string) => {
     setSelectedStudentIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   };
@@ -353,368 +256,374 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           classroom_id: assignModal.id,
-          student_ids: [...selectedStudentIds],
+          student_ids: Array.from(selectedStudentIds),
         }),
       });
-      const data = await res.json();
       if (res.ok) {
-        setAssignResult(`✓ Assigned to ${data.assigned} student${data.assigned !== 1 ? 's' : ''}`);
-        loadAll();
+        setAssignResult(`✓ Assigned to ${selectedStudentIds.size} students`);
+        setTimeout(() => {
+          setAssignModal(null);
+          setAssignResult(null);
+          setSelectedStudentIds(new Set());
+          loadAll();
+        }, 1500);
       } else {
-        setAssignResult(`Error: ${data.error}`);
+        setAssignResult('Failed to assign course');
       }
+    } catch {
+      setAssignResult('Error assigning course');
     } finally {
       setAssigning(false);
     }
   };
 
+  const handleCopy = () => {
+    if (!inviteCode) return;
+    navigator.clipboard.writeText(inviteCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const showStudentProgress = async (studentId: string) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/teacher/student-progress?id=${studentId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSelectedStudent(data);
+      }
+    } catch {} finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditStudent = (s: Student) => {
+    setEditingStudent(s);
+    setEditStudentName(s.display_name);
+    setEditStudentGrade(s.grade || '');
+    setEditStudentPassword('');
+    setEditStudentError(null);
+  };
+
+  const handleSaveStudent = async () => {
+    if (!editingStudent) return;
+    if (editStudentName.trim().length < 2) {
+      setEditStudentError('Name too short');
+      return;
+    }
+    setEditStudentSaving(true);
+    try {
+      const res = await fetch(`/api/teacher/students`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingStudent.id,
+          display_name: editStudentName,
+          grade: editStudentGrade || null,
+          password: editStudentPassword || undefined,
+        }),
+      });
+      if (res.ok) {
+        setEditingStudent(null);
+        loadAll();
+      } else {
+        const err = await res.json();
+        setEditStudentError(err.error || 'Failed to save');
+      }
+    } catch {
+      setEditStudentError('Error saving changes');
+    } finally {
+      setEditStudentSaving(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    router.refresh();
+  };
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-foreground">OpenTalib — Teacher</h1>
-            <p className="text-sm text-muted-foreground">{displayName ?? userEmail}</p>
+    <div className="min-h-screen bg-background flex flex-col lg:flex-row">
+      {/* ── Sidebar ── */}
+      <aside className="w-full lg:w-72 border-b lg:border-r border-border flex flex-col bg-card shrink-0">
+        <div className="p-6">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20">
+              <BookOpen className="w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="font-black text-xl tracking-tight text-foreground uppercase">
+                OpenTalib
+              </h1>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                Teacher Panel
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => router.push('/profile')}
-              className="p-2 rounded-lg text-muted-foreground hover:bg-muted transition-colors"
-              title="Profile settings"
-            >
-              <UserCircle className="w-4 h-4" />
-            </button>
-            <button
-              onClick={handleLogout}
-              className="p-2 rounded-lg text-muted-foreground hover:bg-muted transition-colors"
-              title="Logout"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
+
+          <nav className="space-y-1">
+            <NavItem
+              active={tab === 'students'}
+              onClick={() => setTab('students')}
+              icon={<Users className="w-4 h-4" />}
+              label="My Students"
+            />
+            <NavItem
+              active={tab === 'courses'}
+              onClick={() => setTab('courses')}
+              icon={<BookOpen className="w-4 h-4" />}
+              label="My Courses"
+            />
+            <NavItem
+              active={tab === 'assignments'}
+              onClick={() => setTab('assignments')}
+              icon={<ClipboardList className="w-4 h-4" />}
+              label="Assignments"
+            />
+            <NavItem
+              active={tab === 'exam-results'}
+              onClick={() => setTab('exam-results')}
+              icon={<FileText className="w-4 h-4" />}
+              label="Exam Results"
+            />
+            <NavItem
+              active={tab === 'analytics'}
+              onClick={() => setTab('analytics')}
+              icon={<BarChart2 className="w-4 h-4" />}
+              label="Analytics"
+            />
+          </nav>
+        </div>
+
+        <div className="mt-auto p-6 border-t border-border space-y-4">
+          <div className="bg-muted/40 rounded-xl p-4 border border-border/50">
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">
+              Student Invite Code
+            </p>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 bg-background border border-border px-2 py-1.5 rounded text-sm font-mono font-bold text-primary">
+                {inviteCode || '...'}
+              </code>
+              <button
+                onClick={handleCopy}
+                className="p-2 rounded-lg bg-background border border-border hover:bg-muted transition-colors"
+                title="Copy code"
+              >
+                {copied ? (
+                  <Check className="w-4 h-4 text-green-500" />
+                ) : (
+                  <Copy className="w-4 h-4 text-muted-foreground" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 px-2">
+            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground border border-border">
+              <UserCircle className="w-5 h-5" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-foreground truncate">
+                {displayName || userEmail || 'Teacher'}
+              </p>
+              <button
+                onClick={handleLogout}
+                className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest hover:text-destructive transition-colors flex items-center gap-1"
+              >
+                Sign Out <LogOut className="w-2.5 h-2.5" />
+              </button>
+            </div>
           </div>
         </div>
-      </header>
+      </aside>
 
-      {/* Tabs */}
-      <div className="border-b border-border bg-card">
-        <div className="max-w-6xl mx-auto px-6 flex gap-1">
-          {(
-            [
-              { id: 'students', label: 'My Students', icon: <Users className="w-4 h-4" /> },
-              { id: 'courses', label: 'My Courses', icon: <BookOpen className="w-4 h-4" /> },
-              {
-                id: 'assignments',
-                label: 'Assignments',
-                icon: <ClipboardList className="w-4 h-4" />,
-              },
-              {
-                id: 'exam-results',
-                label: 'Exam Results',
-                icon: <BarChart2 className="w-4 h-4" />,
-              },
-              { id: 'analytics', label: 'Analytics', icon: <BarChart2 className="w-4 h-4" /> },
-            ] as { id: Tab; label: string; icon: React.ReactNode }[]
-          ).map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                tab === t.id
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {t.icon}
-              {t.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <main className="max-w-6xl mx-auto px-6 py-8">
+      {/* ── Main Content ── */}
+      <main className="flex-1 p-6 lg:p-10 overflow-y-auto">
         {/* ── Tab: Students ── */}
         {tab === 'students' && (
           <div className="space-y-6">
-            {/* Invite Code */}
-            <div className="bg-card border border-border rounded-xl p-5">
-              <p className="text-sm font-medium text-muted-foreground mb-2">
-                Your Student Invite Code
-              </p>
-              <div className="flex items-center gap-3">
-                <span className="text-2xl font-mono font-bold tracking-widest text-foreground">
-                  {inviteCode ?? '——————'}
-                </span>
-                <button
-                  onClick={copyInviteCode}
-                  className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
-                  title="Copy code"
-                >
-                  {copied ? (
-                    <Check className="w-4 h-4 text-green-500" />
-                  ) : (
-                    <Copy className="w-4 h-4" />
-                  )}
-                </button>
-                <button
-                  onClick={regenerateCode}
-                  className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
-                  title="Regenerate code"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                </button>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Share this code with students so they can sign up and join your class.
-              </p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <h2 className="text-2xl font-black tracking-tight text-foreground uppercase">
+                My Students
+              </h2>
             </div>
 
-            {/* Student List */}
-            <div>
-              <h2 className="text-lg font-semibold mb-4">
-                Students{' '}
-                <span className="text-muted-foreground font-normal text-sm">
-                  ({students.length})
-                </span>
-              </h2>
-              {loading ? (
-                <div className="space-y-2">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-14 rounded-lg bg-muted animate-pulse" />
-                  ))}
-                </div>
-              ) : students.length === 0 ? (
-                <div className="text-center py-16 border-2 border-dashed border-border rounded-xl">
-                  <Users className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-muted-foreground font-medium">
-                    No students yet — share your invite code
-                  </p>
-                </div>
-              ) : (
-                <div className="bg-card border border-border rounded-xl overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border bg-muted/50">
-                        <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">
-                          Name
-                        </th>
-                        <th className="text-left px-4 py-2.5 font-medium text-muted-foreground hidden sm:table-cell">
-                          Grade
-                        </th>
-                        <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">
-                          Courses
-                        </th>
-                        <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">
-                          Last Quiz
-                        </th>
-                        <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">
-                          Last Active
-                        </th>
-                        <th className="px-4 py-2.5" />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {students.map((s) => (
-                        <tr
-                          key={s.id}
-                          className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
-                        >
-                          <td className="px-4 py-3 font-medium text-foreground">
+            {loading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-40 rounded-2xl bg-muted animate-pulse" />
+                ))}
+              </div>
+            ) : students.length === 0 ? (
+              <div className="text-center py-24 border-2 border-dashed border-border rounded-2xl bg-muted/20">
+                <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-20" />
+                <p className="text-muted-foreground font-medium mb-2">No students yet</p>
+                <p className="text-sm text-muted-foreground/60 max-w-xs mx-auto">
+                  Share your invite code with students so they can join your class.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {students.map((s) => (
+                  <div
+                    key={s.id}
+                    className="group bg-card border border-border rounded-2xl p-5 hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/5 cursor-pointer flex flex-col"
+                    onClick={() => showStudentProgress(s.id)}
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                          <UserCircle className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-foreground leading-tight">
                             {s.display_name}
-                          </td>
-                          <td className="px-4 py-3 text-muted-foreground hidden sm:table-cell">
-                            {s.grade ?? '—'}
-                          </td>
-                          <td className="px-4 py-3 text-center text-muted-foreground">
-                            {s.coursesAssigned}
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            {s.lastQuizScore !== null ? (
-                              <ScoreBadge pct={s.lastQuizScore} />
-                            ) : (
-                              <span className="text-muted-foreground">—</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-right text-xs text-muted-foreground">
-                            {s.lastAccessed
-                              ? new Date(s.lastAccessed).toLocaleDateString(undefined, {
-                                  month: 'short',
-                                  day: 'numeric',
-                                })
-                              : '—'}
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              <button
-                                onClick={() => openEditStudent(s)}
-                                className="p-1 rounded hover:bg-muted text-muted-foreground transition-colors"
-                                title="Edit student"
-                              >
-                                <Pencil className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={() => openStudentProgress(s.id)}
-                                className="p-1 rounded hover:bg-muted text-muted-foreground transition-colors"
-                                title="View progress"
-                              >
-                                <ChevronRight className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
+                          </h3>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">
+                            {s.grade ? `Grade ${s.grade}` : 'No Grade'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditStudent(s);
+                          }}
+                          className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 mt-auto">
+                      <div className="bg-muted/30 rounded-xl p-2.5 text-center">
+                        <p className="text-lg font-black text-foreground">
+                          {s.coursesAssigned}
+                        </p>
+                        <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest">
+                          Assigned
+                        </p>
+                      </div>
+                      <div className="bg-muted/30 rounded-xl p-2.5 text-center">
+                        <p className="text-lg font-black text-foreground">
+                          {s.lastQuizScore !== null ? `${s.lastQuizScore}%` : '—'}
+                        </p>
+                        <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest">
+                          Last Quiz
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
         {/* ── Tab: Courses ── */}
         {tab === 'courses' && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">My Courses</h2>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => router.push('/exam/create')}
-                  className="flex items-center gap-1.5 px-3 py-2 border border-border text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors"
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <h2 className="text-2xl font-black tracking-tight text-foreground uppercase">
+                My Courses
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                <select
+                  className="px-3 py-1.5 rounded-lg border border-border bg-card text-xs font-bold uppercase tracking-wider text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  value={selectedSubjectId}
+                  onChange={(e) => setSelectedSubjectId(e.target.value)}
                 >
-                  <FileText className="w-3.5 h-3.5" />
-                  Create Exam
-                </button>
+                  <option value="all">All Subjects</option>
+                  {subjects.map((sub) => (
+                    <option key={sub.id} value={sub.id}>
+                      {sub.name}
+                    </option>
+                  ))}
+                </select>
                 <button
                   onClick={() => router.push('/generate')}
-                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-opacity shadow-lg shadow-primary/20 flex items-center gap-2"
                 >
-                  + Generate New Course
+                  <RefreshCw className="w-3 h-3" /> Create New
                 </button>
               </div>
             </div>
 
-            {/* Subject Filter Bar */}
-            {!loading && courses.length > 0 && subjects.length > 0 && (
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                  Filter by:
-                </span>
-                <select
-                  value={selectedSubjectId}
-                  onChange={(e) => setSelectedSubjectId(e.target.value)}
-                  className="border rounded-lg px-3 py-2 text-sm bg-background cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/40"
-                >
-                  <option value="all">All Subjects</option>
-                  {subjects.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.icon} {s.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-
             {loading ? (
-              <div className="space-y-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-20 rounded-xl bg-muted animate-pulse" />
+                  <div key={i} className="h-48 rounded-2xl bg-muted animate-pulse" />
                 ))}
               </div>
             ) : courses.length === 0 ? (
-              <div className="text-center py-16 border-2 border-dashed border-border rounded-xl">
-                <BookOpen className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-                <p className="text-muted-foreground font-medium">
-                  No courses yet — generate your first course
-                </p>
+              <div className="text-center py-24 border-2 border-dashed border-border rounded-2xl bg-muted/20">
+                <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-20" />
+                <p className="text-muted-foreground font-medium">No courses found</p>
+                <button
+                  onClick={() => router.push('/generate')}
+                  className="mt-4 text-sm font-bold text-primary hover:underline"
+                >
+                  Create your first course →
+                </button>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {courses
                   .filter((c) => selectedSubjectId === 'all' || c.subject_id === selectedSubjectId)
-                  .map((c) => {
-                    const displayTitle = (c.short_title || c.title || '').slice(0, 60);
-                    return (
-                      <div
-                        key={c.id}
-                        className="bg-card border border-border rounded-xl p-4 flex items-center justify-between gap-4 transition-all hover:border-primary/30"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
-                            <p className="font-medium text-foreground">{displayTitle}</p>
-                            <span
-                              className="px-1.5 py-0.5 rounded bg-muted text-[10px] text-muted-foreground font-mono hover:bg-muted/80 transition-colors cursor-pointer shrink-0"
-                              title="Click to copy full course ID"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigator.clipboard.writeText(c.id);
-                              }}
-                            >
-                              #{c.id.slice(-6)}
-                            </span>
-                          </div>
-                          {c.short_title && c.title !== c.short_title && (
-                            <p
-                              className="text-[11px] text-muted-foreground line-clamp-1 mb-1"
-                              title={c.title}
-                            >
-                              {c.title}
-                            </p>
-                          )}
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="text-[10px] text-muted-foreground">
-                              {new Date(c.created_at).toLocaleDateString(undefined, {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric',
-                              })}
-                            </p>
-                            {c.grade && (
-                              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-bold">
-                                G{c.grade}
-                              </span>
-                            )}
-                            <select
-                              value={c.subject_id || 'none'}
-                              onChange={(e) => updateCourseSubject(c.id, e.target.value)}
-                              className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-bold border-0 cursor-pointer focus:ring-1 focus:ring-purple-400/50 appearance-none hover:bg-purple-200 dark:hover:bg-purple-800/40 transition-colors"
-                            >
-                              <option value="none">No Subject</option>
-                              {subjects.map((s) => (
-                                <option key={s.id} value={s.id}>
-                                  {s.icon} {s.name}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
+                  .map((c) => (
+                    <div
+                      key={c.id}
+                      className="group bg-card border border-border rounded-2xl p-5 hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/5 flex flex-col"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-xl group-hover:bg-primary/10 transition-colors">
+                          {c.subject_icon || '📚'}
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={() => setDeleteConfirmCourse(c)}
-                            className="p-1.5 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                            className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
                             title="Delete course"
                           >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => router.push(`/classroom/${c.id}`)}
-                            className="px-3 py-1.5 rounded-lg text-xs font-medium border border-border hover:bg-muted transition-colors text-muted-foreground"
-                          >
-                            Open
-                          </button>
-                          <button
-                            onClick={() => openAssignModal(c)}
-                            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
-                          >
-                            Assign
+                            <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </div>
-                    );
-                  })}
-                {courses.filter(
-                  (c) => selectedSubjectId === 'all' || c.subject_id === selectedSubjectId,
-                ).length === 0 && (
-                  <div className="text-center py-12 border border-dashed border-border rounded-xl bg-muted/20">
+                      <h3 className="font-bold text-foreground mb-1 leading-tight line-clamp-2 min-h-[2.5rem]">
+                        {c.title}
+                      </h3>
+                      <div className="flex items-center gap-2 mb-4">
+                        <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest bg-muted/50 px-2 py-0.5 rounded">
+                          {c.grade ? `Grade ${c.grade}` : 'General'}
+                        </span>
+                        <span className="text-[10px] font-black text-primary uppercase tracking-widest">
+                          {c.subject_name || 'Uncategorized'}
+                        </span>
+                      </div>
+
+                      <div className="mt-auto pt-4 border-t border-border/50 flex items-center justify-between">
+                        <button
+                          onClick={() => router.push(`/classroom/${c.id}`)}
+                          className="text-xs font-bold text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5"
+                        >
+                          View <ChevronRight className="w-3 h-3" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setAssignModal(c);
+                            setSelectedStudentIds(new Set());
+                          }}
+                          className="px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-primary-foreground transition-all"
+                        >
+                          Assign Students
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                {courses.filter((c) => selectedSubjectId === 'all' || c.subject_id === selectedSubjectId).length === 0 && (
+                  <div className="col-span-full py-12 text-center">
                     <p className="text-muted-foreground text-sm">
                       No courses found for this subject.
                     </p>
@@ -833,11 +742,8 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
                         onClick={() =>
                           setExpandedExams((prev) => {
                             const next = new Set(prev);
-                            if (next.has(exam.exam_id)) {
-                              next.delete(exam.exam_id);
-                            } else {
-                              next.add(exam.exam_id);
-                            }
+                            if (next.has(exam.exam_id)) next.delete(exam.exam_id);
+                            else next.add(exam.exam_id);
                             return next;
                           })
                         }
@@ -967,6 +873,77 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
                       </p>
                       <ScoreBadge pct={teacherStats.avgQuizScore} />
                     </div>
+                  </div>
+                </div>
+
+                {/* Concept Mastery Heatmap */}
+                <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+                  <div className="px-5 py-4 border-b border-border bg-muted/10 flex items-center justify-between">
+                    <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground">
+                      Concept Mastery Heatmap
+                    </h3>
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-3 h-3 rounded bg-red-500/20 border border-red-500/30" />
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-widest">Weak</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-3 h-3 rounded bg-green-500/20 border border-green-500/30" />
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-widest">Mastered</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="overflow-x-auto">
+                    {!heatmapData || Object.keys(heatmapData.heatmap).length === 0 ? (
+                      <div className="p-12 text-center text-muted-foreground italic text-sm">
+                        No mastery data available yet.
+                      </div>
+                    ) : (
+                      <table className="w-full text-[11px] border-collapse">
+                        <thead>
+                          <tr className="bg-muted/30 border-b border-border">
+                            <th className="text-left px-5 py-3 font-bold text-muted-foreground sticky left-0 bg-card z-10 border-r border-border min-w-[150px]">Concept</th>
+                            {heatmapData.students.map(s => (
+                              <th key={s.id} className="px-2 py-3 font-bold text-muted-foreground text-center min-w-[60px]">
+                                <div className="truncate w-12 mx-auto">
+                                  {s.display_name}
+                                </div>
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border">
+                          {Object.entries(heatmapData.heatmap).map(([concept, studentScores]) => (
+                            <tr key={concept} className="hover:bg-muted/5 transition-colors">
+                              <td className="px-5 py-2 font-medium text-foreground sticky left-0 bg-card z-10 border-r border-border truncate max-w-[200px]" title={concept}>
+                                {concept}
+                              </td>
+                              {heatmapData.students.map(s => {
+                                const score = studentScores[s.id];
+                                return (
+                                  <td key={s.id} className="p-0.5 text-center">
+                                    {score !== undefined ? (
+                                      <div 
+                                        className={`w-full h-8 rounded flex items-center justify-center font-bold transition-all ${
+                                          score >= 80 ? 'bg-green-500/20 text-green-700 dark:text-green-400 border border-green-500/30' :
+                                          score >= 50 ? 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border border-yellow-500/30' :
+                                          'bg-red-500/20 text-red-700 dark:text-red-400 border border-red-500/30'
+                                        }`}
+                                        title={`${s.display_name}: ${score}%`}
+                                      >
+                                        {score}
+                                      </div>
+                                    ) : (
+                                      <div className="w-full h-8 rounded bg-muted/20 border border-transparent" />
+                                    )}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
                   </div>
                 </div>
 
@@ -1379,5 +1356,31 @@ function Modal({
         <div className="overflow-y-auto p-5">{children}</div>
       </div>
     </div>
+  );
+}
+
+function NavItem({
+  active,
+  onClick,
+  icon,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold uppercase tracking-widest transition-all ${
+        active
+          ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+      }`}
+    >
+      {icon}
+      {label}
+    </button>
   );
 }
