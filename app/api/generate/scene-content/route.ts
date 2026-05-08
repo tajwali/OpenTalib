@@ -124,7 +124,8 @@ export async function POST(req: NextRequest) {
           userPrompt: string,
           images?: Array<{ id: string; src: string }>,
         ): Promise<string> => {
-          const finalSystemPrompt = pedagogyHeader ? pedagogyHeader + '\n\n' + systemPrompt : systemPrompt;
+          const updatedSystemPrompt = systemPrompt + '\n\nAlso output a "conceptKeys" array in your JSON: 2-5 short snake_case strings naming the core concepts in this scene.\nExample: ["prime_numbers", "factor_trees", "composite_numbers"]';
+          const finalSystemPrompt = pedagogyHeader ? pedagogyHeader + '\n\n' + updatedSystemPrompt : updatedSystemPrompt;
           if (images?.length && hasVision) {
             const result = await callLLM(
               {
@@ -209,9 +210,10 @@ export async function POST(req: NextRequest) {
 
         log.info(`Content generated successfully: "${effectiveOutline.title}"`);
 
+        const conceptKeys: string[] = (content as any).conceptKeys ?? [];
         controller.enqueue(
           encoder.encode(
-            `data: ${JSON.stringify({ success: true, content, effectiveOutline })}\n\n`,
+            `data: ${JSON.stringify({ success: true, content: { ...content, conceptKeys }, effectiveOutline })}\n\n`,
           ),
         );
       } catch (error) {

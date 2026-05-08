@@ -11,6 +11,7 @@ import {
   CheckCircle,
   UserCircle,
 } from 'lucide-react';
+import { ReviewQueue } from '@/components/dashboard/ReviewQueue';
 
 interface AssignedClassroom {
   id: string;
@@ -192,6 +193,11 @@ export default function SchoolStudentDashboard({ userEmail, displayName }: Props
       </header>
 
       <main className="max-w-6xl mx-auto px-6 py-8 space-y-8">
+        <section className="mb-6">
+          <h2 className="text-base font-medium mb-3">Today's Review</h2>
+          <ReviewQueue />
+        </section>
+
         {/* Stats Row */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           <StatCard
@@ -247,90 +253,24 @@ export default function SchoolStudentDashboard({ userEmail, displayName }: Props
           ) : classrooms.length === 0 ? (
             <div className="text-center py-16 border-2 border-dashed border-border rounded-xl">
               <BookOpen className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground font-medium">
-                No courses assigned yet — ask your teacher
-              </p>
+              <p className="text-muted-foreground font-medium">No courses assigned yet</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {classrooms
                 .filter((c) => selectedSubjectId === 'all' || c.subject_id === selectedSubjectId)
-                .map((c) => {
-                  const displayTitle = (c.short_title || c.title || '').slice(0, 60);
-                  const subjectIcon = c.subject_icon;
-                  const subjectName = c.subject_name;
-                  return (
-                    <button
-                      key={c.id}
-                      onClick={() => router.push(`/classroom/${c.id}`)}
-                      className="text-left bg-card border border-border rounded-xl p-5 hover:border-primary/50 hover:shadow-md transition-all group relative overflow-hidden"
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-bold uppercase tracking-wider">
-                            assigned
-                          </span>
-                          {c.grade && (
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-bold">
-                              G{c.grade}
-                            </span>
-                          )}
-                          {subjectName && (
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-bold flex items-center gap-1">
-                              <span>{subjectIcon}</span>
-                              <span>{subjectName}</span>
-                            </span>
-                          )}
-                          {c.completed && <CheckCircle className="w-3.5 h-3.5 text-green-500" />}
-                        </div>
-                        <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                          {new Date(c.assigned_at).toLocaleDateString(undefined, {
-                            month: 'short',
-                            day: 'numeric',
-                          })}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                        <p className="font-medium text-sm text-foreground group-hover:text-primary transition-colors">
-                          {displayTitle}
-                        </p>
-                        <span
-                          className="px-1.5 py-0.5 rounded bg-muted text-[10px] text-muted-foreground font-mono hover:bg-muted/80 transition-colors cursor-pointer shrink-0"
-                          title="Click to copy full course ID"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigator.clipboard.writeText(c.id);
-                          }}
-                        >
-                          #{c.id.slice(-6)}
-                        </span>
-                      </div>
-                      {c.short_title && c.title !== c.short_title && (
-                        <p
-                          className="text-[11px] text-muted-foreground line-clamp-1"
-                          title={c.title}
-                        >
-                          {c.title}
-                        </p>
-                      )}
-                    </button>
-                  );
-                })}
+                .map((c) => (
+                  <CourseCard
+                    key={c.id}
+                    classroom={c}
+                    onClick={() => router.push(`/classroom/${c.id}`)}
+                  />
+                ))}
             </div>
           )}
-          {classrooms.filter(
-            (c) => selectedSubjectId === 'all' || c.subject_id === selectedSubjectId,
-          ).length === 0 &&
-            classrooms.length > 0 && (
-              <div className="text-center py-12 border border-dashed border-border rounded-xl bg-muted/20">
-                <p className="text-muted-foreground text-sm">
-                  No assigned courses found for this subject.
-                </p>
-              </div>
-            )}
         </section>
 
-        {/* My Exams */}
+        {/* Exams */}
         <section>
           <h2 className="text-lg font-semibold mb-4">My Exams</h2>
           {loading ? (
@@ -342,15 +282,15 @@ export default function SchoolStudentDashboard({ userEmail, displayName }: Props
           ) : exams.length === 0 ? (
             <div className="text-center py-10 border-2 border-dashed border-border rounded-xl">
               <FileText className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-              <p className="text-muted-foreground text-sm">No exams assigned yet</p>
+              <p className="text-muted-foreground text-sm">No exams yet</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {exams.map((e, i) => (
+              {exams.map((e, idx) => (
                 <ExamCard
                   key={e.id}
                   exam={e}
-                  index={i}
+                  index={idx}
                   onNavigate={() => router.push(`/exam/${e.id}`)}
                 />
               ))}
@@ -425,17 +365,49 @@ export default function SchoolStudentDashboard({ userEmail, displayName }: Props
   );
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+function CourseCard({ classroom, onClick }: { classroom: AssignedClassroom; onClick: () => void }) {
+  const date = new Date(classroom.assigned_at).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+  });
+  return (
+    <div
+      onClick={onClick}
+      className="group bg-card border border-border rounded-xl p-5 hover:border-primary/50 hover:shadow-md transition-all cursor-pointer flex flex-col h-full"
+    >
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-bold uppercase tracking-wider">
+            {classroom.status}
+          </span>
+          {classroom.completed && (
+            <span title="Completed" className="text-green-500">
+              <CheckCircle className="w-4 h-4" />
+            </span>
+          )}
+        </div>
+        <span className="text-xs text-muted-foreground">{date}</span>
+      </div>
+      <div className="mb-4">
+        <h3 className="font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2">
+          {classroom.short_title ?? classroom.title}
+        </h3>
+        <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{classroom.topic}</p>
+      </div>
+      <div className="mt-auto pt-4 border-t border-border/50 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-lg">{classroom.subject_icon ?? '📚'}</span>
+          <span className="text-xs font-medium text-muted-foreground">
+            {classroom.subject_name ?? 'General'}
+          </span>
+        </div>
+        <span className="text-xs font-medium text-primary group-hover:underline">Start →</span>
+      </div>
+    </div>
+  );
+}
 
-function ExamCard({
-  exam,
-  index,
-  onNavigate,
-}: {
-  exam: Exam;
-  index: number;
-  onNavigate: () => void;
-}) {
+function ExamCard({ exam, index, onNavigate }: { exam: Exam; index: number; onNavigate: () => void }) {
   const r = exam.result;
   const pct = r ? Math.round(r.percentage) : null;
   const scoreColor =

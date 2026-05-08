@@ -14,6 +14,7 @@ import {
   UserCircle,
   X,
 } from 'lucide-react';
+import { ReviewQueue } from '@/components/dashboard/ReviewQueue';
 
 interface Classroom {
   id: string;
@@ -266,6 +267,11 @@ export default function MatureStudentDashboard({ userEmail, displayName }: Props
       </header>
 
       <main className="max-w-6xl mx-auto px-6 py-8 space-y-8">
+        <section className="mb-6">
+          <h2 className="text-base font-medium mb-3">Today's Review</h2>
+          <ReviewQueue />
+        </section>
+
         {/* Stats Row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <StatCard

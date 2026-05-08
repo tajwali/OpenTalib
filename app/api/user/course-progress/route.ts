@@ -111,6 +111,28 @@ export async function PATCH(request: NextRequest) {
     // Save update
     await admin.from('course_progress').upsert(updateData, { onConflict: 'user_id,classroom_id' });
 
+    // Seed spaced repetition — non-fatal
+    try {
+      const sceneConceptKeys: string[] = (body as any).conceptKeys ?? []
+      if (sceneConceptKeys.length > 0) {
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+        await fetch(`${baseUrl}/api/spaced-repetition/seed`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Cookie': request.headers.get('cookie') ?? '',
+          },
+          body: JSON.stringify({
+            conceptKeys: sceneConceptKeys,
+            courseId: body.classroom_id ?? (body as any).courseId ?? '',
+            subject: (body as any).subject ?? '',
+          }),
+        })
+      }
+    } catch (e) {
+      console.warn('[course-progress] seed failed:', e)
+    }
+
     // Final check for completion
     const isCompleted = await evaluateCompletion(user.id, body.classroom_id, admin);
     if (isCompleted) {
