@@ -258,45 +258,84 @@ function HomePage() {
   };
 
   const handleGenerate = async () => {
-    if (!form.requirement.trim() || !currentModelId) return;
-
-    setError(null);
-    let pdfId: string | undefined;
-
-    if (form.pdfFile) {
-      try {
-        pdfId = await storePdfBlob(form.pdfFile);
-      } catch (err) {
-        setError('Failed to process PDF file');
-        return;
-      }
+    if (!currentModelId) {
+      setSettingsOpen(true);
+      return;
     }
 
-    const sessionId = nanoid();
-    const requirements: UserRequirements = {
-      requirement: form.requirement,
-      language: form.language,
-      webSearch: form.webSearch,
-      grade: form.grade === 'none' ? null : form.grade,
-      subjectId: form.subjectId === 'auto' ? null : form.subjectId,
-      board: form.board,
-      studentContext: form.studentContext,
-      instructionLanguage: form.instructionLanguage,
-    };
+    if (!form.requirement.trim()) {
+      setError(t('upload.requirementRequired'));
+      return;
+    }
 
-    useMediaGenerationStore.getState().setTtsVoice(form.ttsVoice || null);
+    setError(null);
 
+    try {
+      const userProfile = useUserProfileStore.getState();
+      const requirements: UserRequirements = {
+        requirement: form.requirement,
+        language: form.language,
+        userNickname: userProfile.nickname || undefined,
+        userBio: userProfile.bio || undefined,
+        webSearch: form.webSearch || undefined,
+        grade: form.grade !== 'none' ? form.grade : null,
+        subjectId: form.subjectId !== 'auto' ? form.subjectId : null,
+        board: form.board,
+        studentContext: form.studentContext,
+        instructionLanguage: form.instructionLanguage,
+      };
 
-    const session = {
-      sessionId,
-      requirements,
-      pdfText: '',
-      currentStep: 'generating',
-      pdfStorageKey: pdfId,
-      pdfFileName: form.pdfFile?.name,
-    };
-    sessionStorage.setItem('generationSession', JSON.stringify(session));
-    router.push('/generation-preview');
+      const pedagogyRes = await fetch('/api/generate/resolve-pedagogy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requirements),
+      });
+      const pedagogyData = await pedagogyRes.json();
+      const pedagogyProfile = pedagogyData.pedagogyProfile;
+
+      let pdfStorageKey: string | undefined;
+      let pdfFileName: string | undefined;
+      let pdfProviderId: string | undefined;
+      let pdfProviderConfig: { apiKey?: string; baseUrl?: string } | undefined;
+
+      if (form.pdfFile) {
+        pdfStorageKey = await storePdfBlob(form.pdfFile);
+        pdfFileName = form.pdfFile.name;
+
+        const settings = useSettingsStore.getState();
+        pdfProviderId = settings.pdfProviderId;
+        const providerCfg = settings.pdfProvidersConfig?.[settings.pdfProviderId];
+        if (providerCfg) {
+          pdfProviderConfig = {
+            apiKey: providerCfg.apiKey,
+            baseUrl: providerCfg.baseUrl,
+          };
+        }
+      }
+
+      useMediaGenerationStore.getState().setTtsVoice(form.ttsVoice || null);
+
+      const sessionState = {
+        sessionId: nanoid(),
+        requirements,
+        pedagogyProfile,
+        pdfText: '',
+        pdfImages: [],
+        imageStorageIds: [],
+        pdfStorageKey,
+        pdfFileName,
+        pdfProviderId,
+        pdfProviderConfig,
+        sceneOutlines: null,
+        currentStep: 'generating' as const,
+      };
+      sessionStorage.setItem('generationSession', JSON.stringify(sessionState));
+
+      router.push('/generation-preview');
+    } catch (err) {
+      log.error('Error preparing generation:', err);
+      setError(err instanceof Error ? err.message : t('upload.generateFailed'));
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
