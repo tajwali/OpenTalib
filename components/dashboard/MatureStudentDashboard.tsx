@@ -242,6 +242,12 @@ export default function MatureStudentDashboard({ userEmail, displayName }: Props
               📝 Mock Exam
             </a>
             <button
+              onClick={() => router.push('/profile/student')}
+              className="flex items-center gap-2 px-4 py-2 border border-violet-200 bg-violet-50/50 text-violet-700 rounded-lg text-sm font-medium hover:bg-violet-100 transition-colors"
+            >
+              🎯 Learning Profile
+            </button>
+            <button
               onClick={() => router.push('/exam/create')}
               className="flex items-center gap-2 px-4 py-2 border border-border text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors"
             >

@@ -182,6 +182,12 @@ export default function SchoolStudentDashboard({ userEmail, displayName }: Props
               📝 Mock Exam
             </a>
             <button
+              onClick={() => router.push('/profile/student')}
+              className="inline-flex items-center gap-2 rounded-lg border border-violet-200 bg-violet-50/50 px-4 py-2 text-sm font-medium text-violet-700 hover:bg-violet-100 transition-colors mr-2"
+            >
+              🎯 Learning Profile
+            </button>
+            <button
               onClick={() => router.push('/profile')}
               className="p-2 rounded-lg text-muted-foreground hover:bg-muted transition-colors"
               title="Profile settings"

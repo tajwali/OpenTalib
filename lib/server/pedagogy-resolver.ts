@@ -94,8 +94,20 @@ async function callLLMSimple(
 
 export async function resolvePedagogy(input: ResolverInput): Promise<PedagogyProfile> {
   const gradeBand = getGradeBand(input.grade)
-  const boardDescription = getBoardDescription(input.board)
+  let boardDescription = getBoardDescription(input.board)
   const gradeConstraints = GRADE_BAND_CONSTRAINTS[gradeBand]
+
+  // If not found in static registry, check custom_boards table
+  if (boardDescription === getBoardDescription('Other') && input.board !== 'Other') {
+    const { getSupabaseAdmin } = await import('./supabase-admin')
+    const admin = getSupabaseAdmin()
+    const { data: cb } = await admin
+      .from('custom_boards')
+      .select('description')
+      .eq('name', input.board)
+      .single()
+    if (cb?.description) boardDescription = cb.description
+  }
 
   const userContext = `
 Topic: ${input.topic}

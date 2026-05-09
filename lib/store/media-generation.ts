@@ -37,6 +37,7 @@ export interface MediaTask {
 
 interface MediaGenerationState {
   tasks: Record<string, MediaTask>;
+  ttsVoice: string | null; // New field for TTS voice preference
 
   // Batch enqueue
   enqueueTasks: (stageId: string, requests: MediaGenerationRequest[]) => void;
@@ -59,6 +60,9 @@ interface MediaGenerationState {
   // Cleanup
   clearStage: (stageId: string) => void;
   revokeObjectUrls: () => void;
+
+  // Preferences
+  setTtsVoice: (voice: string | null) => void; // Method to set TTS voice
 }
 
 // ==================== Helper ====================
@@ -72,6 +76,7 @@ export function isMediaPlaceholder(src: string): boolean {
 
 export const useMediaGenerationStore = create<MediaGenerationState>()((set, get) => ({
   tasks: {},
+  ttsVoice: null, // Initialize ttsVoice state
 
   enqueueTasks: (stageId, requests) => {
     const newTasks: Record<string, MediaTask> = {};
@@ -229,5 +234,9 @@ export const useMediaGenerationStore = create<MediaGenerationState>()((set, get)
       if (task.objectUrl) URL.revokeObjectURL(task.objectUrl);
       if (task.poster) URL.revokeObjectURL(task.poster);
     }
+  },
+
+  setTtsVoice: (voice: string | null) => {
+    set({ ttsVoice: voice });
   },
 }));
