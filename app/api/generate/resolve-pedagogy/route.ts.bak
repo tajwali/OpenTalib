@@ -15,9 +15,8 @@ export async function POST(request: NextRequest) {
   }
 
   const body = JSON.parse(await request.text())
-  const topic = body.topic ?? body.requirement ?? body.prompt ?? ''
-  
   const {
+    topic = '',
     grade = null,
     subject = '',
     board = 'Other',

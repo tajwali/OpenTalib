@@ -17,6 +17,7 @@ import type { AgentInfo } from '@/lib/generation/generation-pipeline';
 import type { SceneOutline, PdfImage, ImageMapping } from '@/lib/types/generation';
 import { createLogger } from '@/lib/logger';
 import { resolveModelFromHeaders } from '@/lib/server/resolve-model';
+import { buildSystemPromptHeader } from '@/lib/server/pedagogy-resolver';
 
 const log = createLogger('Scene Content API');
 
@@ -57,6 +58,7 @@ export async function POST(req: NextRequest) {
           stageId,
           agents,
           languageDirective,
+          pedagogyProfile,
         } = body as {
           outline: SceneOutline;
           allOutlines: SceneOutline[];
@@ -71,6 +73,7 @@ export async function POST(req: NextRequest) {
           stageId: string;
           agents?: AgentInfo[];
           languageDirective?: string;
+          pedagogyProfile?: any;
         };
 
         // Validate required fields
@@ -113,17 +116,21 @@ export async function POST(req: NextRequest) {
         // Detect vision capability
         const hasVision = !!modelInfo?.capabilities?.vision;
 
+        const pedagogyHeader = pedagogyProfile ? buildSystemPromptHeader(pedagogyProfile) : '';
+
         // Vision-aware AI call function
         const aiCall = async (
           systemPrompt: string,
           userPrompt: string,
           images?: Array<{ id: string; src: string }>,
         ): Promise<string> => {
+          const updatedSystemPrompt = systemPrompt + '\n\nAlso output a "conceptKeys" array in your JSON: 2-5 short snake_case strings naming the core concepts in this scene.\nExample: ["prime_numbers", "factor_trees", "composite_numbers"]';
+          const finalSystemPrompt = pedagogyHeader ? pedagogyHeader + '\n\n' + updatedSystemPrompt : updatedSystemPrompt;
           if (images?.length && hasVision) {
             const result = await callLLM(
               {
                 model: languageModel,
-                system: systemPrompt,
+                system: finalSystemPrompt,
                 messages: [
                   {
                     role: 'user' as const,
@@ -139,7 +146,7 @@ export async function POST(req: NextRequest) {
           const result = await callLLM(
             {
               model: languageModel,
-              system: systemPrompt,
+              system: finalSystemPrompt,
               prompt: userPrompt,
               maxOutputTokens: modelInfo?.outputWindow,
             },
@@ -203,9 +210,10 @@ export async function POST(req: NextRequest) {
 
         log.info(`Content generated successfully: "${effectiveOutline.title}"`);
 
+        const conceptKeys: string[] = (content as any).conceptKeys ?? [];
         controller.enqueue(
           encoder.encode(
-            `data: ${JSON.stringify({ success: true, content, effectiveOutline })}\n\n`,
+            `data: ${JSON.stringify({ success: true, content: { ...content, conceptKeys }, effectiveOutline })}\n\n`,
           ),
         );
       } catch (error) {

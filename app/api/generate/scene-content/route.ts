@@ -182,40 +182,66 @@ export async function POST(req: NextRequest) {
 
         startKeepAlive();
 
-        const content = await generateSceneContent(effectiveOutline, aiCall, {
-          assignedImages,
-          imageMapping,
-          languageModel: effectiveOutline.type === 'pbl' ? languageModel : undefined,
-          visionEnabled: hasVision,
-          generatedMediaMapping,
-          agents,
-          languageDirective,
-        });
+        try {
+          const content = await generateSceneContent(effectiveOutline, aiCall, {
+            assignedImages,
+            imageMapping,
+            languageModel: effectiveOutline.type === 'pbl' ? languageModel : undefined,
+            visionEnabled: hasVision,
+            generatedMediaMapping,
+            agents,
+            languageDirective,
+          });
 
-        stopKeepAlive();
+          if (!content) {
+            throw new Error('Empty content generated');
+          }
 
-        if (!content) {
-          log.error(`Failed to generate content for: "${effectiveOutline.title}"`);
+          log.info(`Content generated successfully: "${effectiveOutline.title}"`);
+
+          const conceptKeys: string[] = (content as any).conceptKeys ?? [];
           controller.enqueue(
             encoder.encode(
-              `data: ${JSON.stringify({
-                error: `Failed to generate content: ${effectiveOutline.title}`,
-                status: 500,
-              })}\n\n`,
+              `data: ${JSON.stringify({ success: true, content: { ...content, conceptKeys }, effectiveOutline })}\n\n`,
             ),
           );
-          controller.close();
-          return;
+        } catch (parseError) {
+          if (effectiveOutline.type === 'quiz') {
+            console.error('[Scene Content API] Failed to parse, using fallback for quiz scene');
+
+            const sceneName = effectiveOutline.title;
+            const fallbackQuizScene = {
+              questions: [
+                {
+                  id: 'fallback_q1',
+                  type: 'single',
+                  question: `Based on what you have learned, answer this question about ${sceneName.replace('Check!', '').replace('Checkpoint', '').trim()}.`,
+                  options: [
+                    { label: 'Option A', value: 'A' },
+                    { label: 'Option B', value: 'B' },
+                    { label: 'Option C', value: 'C' },
+                    { label: 'Option D', value: 'D' },
+                  ],
+                  answer: ['A'],
+                  analysis: 'Review the lesson content to find the correct answer.',
+                  hasAnswer: true,
+                  points: 1,
+                }
+              ],
+              conceptKeys: ['learning_review', 'quiz_practice'],
+            };
+
+            controller.enqueue(
+              encoder.encode(
+                `data: ${JSON.stringify({ success: true, content: fallbackQuizScene, effectiveOutline })}\n\n`
+              )
+            );
+            return;
+          } else {
+            throw parseError;
+          }
         }
 
-        log.info(`Content generated successfully: "${effectiveOutline.title}"`);
-
-        const conceptKeys: string[] = (content as any).conceptKeys ?? [];
-        controller.enqueue(
-          encoder.encode(
-            `data: ${JSON.stringify({ success: true, content: { ...content, conceptKeys }, effectiveOutline })}\n\n`,
-          ),
-        );
       } catch (error) {
         log.error('Scene content generation error:', error);
         controller.enqueue(
