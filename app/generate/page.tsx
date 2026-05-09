@@ -1,4 +1,6 @@
 'use client';
+const MAX_AVATAR_SIZE = 1024 * 1024 * 2; // 2MB
+function isCustomAvatar(url: string) { return url.startsWith('data:') || url.startsWith('blob:'); }
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
@@ -105,11 +107,11 @@ function HomePage() {
   const { cachedValue: cachedRequirement, updateCache: updateRequirementCache } =
     useDraftCache<string>({ key: 'requirementDraft' });
 
-  const MAX_AVATAR_SIZE = 1024 * 1024 * 2; // 2MB
+  // MAX_AVATAR_SIZE moved top
   const currentModelId = useSettingsStore((s) => s.modelId);
   const [recentOpen, setRecentOpen] = useState(true);
   
-  const [boards, setBoards] = useState<{name: string, description: string}[]>([]);
+  const [boards, setBoards] = useState<{name: string, description: string, category: string}[]>([]);
   const [userDisplayName, setUserDisplayName] = useState('');
   const [profileLoaded, setProfileLoaded] = useState(false);
 

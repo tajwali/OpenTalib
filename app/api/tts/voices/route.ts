@@ -2,16 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
 const VOICES = [
-  { id: 'af_sarah',    name: 'Sarah',    gender: 'female', accent: 'American English', description: 'Warm and encouraging — ideal for younger students' },
-  { id: 'af_bella',    name: 'Bella',    gender: 'female', accent: 'American English', description: 'Clear and friendly — good for all ages' },
-  { id: 'af_nicole',   name: 'Nicole',   gender: 'female', accent: 'American English', description: 'Professional and articulate' },
-  { id: 'af_sky',      name: 'Sky',      gender: 'female', accent: 'American English', description: 'Energetic and bright' },
-  { id: 'bf_emma',     name: 'Emma',     gender: 'female', accent: 'British English',  description: 'Professional and calm — suited for exam prep' },
-  { id: 'bf_isabella', name: 'Isabella', gender: 'female', accent: 'British English',  description: 'Bright and expressive — good for languages' },
-  { id: 'am_adam',     name: 'Adam',     gender: 'male',   accent: 'American English', description: 'Confident and clear — suited for STEM' },
-  { id: 'am_michael',  name: 'Michael',  gender: 'male',   accent: 'American English', description: 'Steady and reassuring — good for complex topics' },
-  { id: 'bm_george',   name: 'George',   gender: 'male',   accent: 'British English',  description: 'Authoritative and precise — professional courses' },
-  { id: 'bm_lewis',    name: 'Lewis',    gender: 'male',   accent: 'British English',  description: 'Energetic and engaging — younger students' },
+  { id: 'alloy',   name: 'Alloy',   gender: 'neutral', accent: 'American English', description: 'Versatile and balanced' },
+  { id: 'ash',     name: 'Ash',     gender: 'neutral', accent: 'American English', description: 'Clear and modern' },
+  { id: 'ballad',  name: 'Ballad',  gender: 'neutral', accent: 'American English', description: 'Deep and resonant' },
+  { id: 'coral',   name: 'Coral',   gender: 'female',  accent: 'American English', description: 'Warm and friendly' },
+  { id: 'echo',    name: 'Echo',    gender: 'male',    accent: 'American English', description: 'Authoritative and steady' },
+  { id: 'fable',   name: 'Fable',   gender: 'neutral', accent: 'American English', description: 'Engaging and narrative' },
+  { id: 'nova',    name: 'Nova',    gender: 'female',  accent: 'American English', description: 'Bright and energetic' },
+  { id: 'onyx',    name: 'Onyx',    gender: 'male',    accent: 'American English', description: 'Confident and professional' },
+  { id: 'sage',    name: 'Sage',    gender: 'neutral', accent: 'American English', description: 'Calm and steady' },
+  { id: 'shimmer', name: 'Shimmer', gender: 'female',  accent: 'American English', description: 'Clear and expressive' },
+  { id: 'verse',   name: 'Verse',   gender: 'neutral', accent: 'American English', description: 'Poetic and fluid' },
 ]
 
 export async function GET(request: NextRequest) {
