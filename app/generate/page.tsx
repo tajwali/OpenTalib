@@ -287,14 +287,16 @@ function HomePage() {
     useMediaGenerationStore.getState().setTtsVoice(form.ttsVoice || null);
 
 
-    const query = new URLSearchParams({
+    const session = {
       sessionId,
-      modelId: currentModelId,
-      req: JSON.stringify(requirements),
-    });
-    if (pdfId) query.set('pdfId', pdfId);
-
-    router.push(`/generate/classroom?${query.toString()}`);
+      requirements,
+      pdfText: '',
+      currentStep: 'generating',
+      pdfStorageKey: pdfId,
+      pdfFileName: form.pdfFile?.name,
+    };
+    sessionStorage.setItem('generationSession', JSON.stringify(session));
+    router.push('/generation-preview');
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
