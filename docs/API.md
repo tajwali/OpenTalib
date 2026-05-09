@@ -1,89 +1,75 @@
-# API Documentation
+# API Documentation (v2.0)
 
-This document describes the API endpoints for **OpenTalib**.
+This document lists the core API endpoints for **OpenTalib**. All endpoints require authentication via Supabase session cookies unless otherwise noted.
 
-## Authentication
+---
 
-All requests (except login/signup) require a valid Supabase session. The session is managed via HTTP-only cookies in the browser.
+## 1. Authentication
 
-For server-to-server communication or admin scripts, you can use the `SUPABASE_SERVICE_KEY` in the `Authorization` header:
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/auth/login` | `POST` | Authenticates a user. |
+| `/api/auth/signup` | `POST` | Creates a new user (Invite Code required for students). |
+| `/api/auth/logout` | `POST` | Clears the session cookie. |
 
-```http
-Authorization: Bearer <your-service-key>
-```
+---
 
-## Role-Based Access (RBAC)
+## 2. Course Generation
 
-| Endpoint Prefix | Allowed Roles |
-|-----------------|---------------|
-| `/api/admin/*`  | `admin` |
-| `/api/teacher/*`| `teacher`, `admin` |
-| `/api/user/*`   | All authenticated users |
-| `/api/generate/*`| `teacher`, `admin`, `mature_student` |
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/generate/resolve-pedagogy` | `POST` | Analyzes topic/board/grade to create a pedagogy profile. |
+| `/api/generate/scene-outlines-stream` | `POST` | Streams the course structure (outline) from the LLM. |
+| `/api/generate/scene-content` | `POST` | Generates the full interactive content for a specific scene. |
+| `/api/user/classrooms` | `POST` | Saves/Updates a course in the database. |
+| `/api/user/classrooms/[id]` | `PATCH` | Used for incremental scene saves. |
 
-## Endpoints
+---
 
-### 1. Authentication
+## 3. Teacher Tools
 
-#### `POST /api/auth/login`
-Authenticates a user and sets a session cookie.
-- **Body:** `{ "email": "...", "password": "..." }`
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/teacher/students` | `GET` | Returns list of students linked to the teacher. |
+| `/api/teacher/assign-course` | `POST` | Grants a student access to a specific course. |
+| `/api/teacher/stats` | `GET` | Aggregate performance data for the class. |
+| `/api/teacher/heatmap` | `GET` | Concept-level mastery data for the entire class. |
 
-#### `POST /api/auth/signup`
-Creates a new user account.
-- **Body:** `{ "email": "...", "password": "...", "inviteCode": "...", "role": "..." }`
-- **Note:** `inviteCode` is required for `school_student` role.
+---
 
-### 2. Teacher API
+## 4. Assessment (Exam Engine)
 
-#### `GET /api/teacher/students`
-Lists all students linked to the teacher.
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/exam/generate-questions` | `POST` | Creates board-aligned questions from course content. |
+| `/api/exam/sessions` | `POST` | Starts a new timed mock exam session. |
+| `/api/exam/sessions/[id]/submit` | `POST` | Submits student answers for AI marking. |
 
-#### `POST /api/teacher/assign-course`
-Assigns a course to one or more students.
-- **Body:** `{ "classroom_id": "...", "student_ids": ["..."] }`
+---
 
-#### `DELETE /api/teacher/assign-course`
-Removes a course assignment.
-- **Body:** `{ "classroom_id": "...", "student_id": "..." }`
+## 5. Learning & Progress
 
-#### `GET /api/teacher/stats`
-Returns aggregated statistics for the teacher's students and courses.
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/planner` | `POST` | Generates a weekly study plan for an upcoming exam. |
+| `/api/spaced-repetition/review` | `POST` | Fetches concepts due for review (SM-2). |
+| `/api/user/course-progress` | `POST/PATCH`| Tracks scene views and course completions. |
+| `/api/quiz-grade` | `POST` | Grades a classroom quiz and updates concept mastery. |
 
-### 3. User API
+---
 
-#### `GET /api/user/classrooms`
-Returns all courses owned by the user.
+## 6. Content Enrichment
 
-#### `POST /api/user/classrooms`
-Saves or updates a course. Support `init: true` for placeholder creation.
-- **Body:** `{ "id": "...", "title": "...", "scenes": [...], "init": boolean }`
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/content/mindmap` | `POST` | Returns mind map JSON for a given scene text. |
+| `/api/content/revision-cards` | `POST` | Returns printable HTML flashcards for course concepts. |
 
-#### `PATCH /api/user/classrooms/[id]`
-Used for incremental scene saves during generation.
-- **Body:** `{ "scenes": [...] }`
+---
 
-#### `GET /api/user/assigned-classrooms`
-Returns courses assigned to the student by their teacher.
+## Role-Based Access Control (RBAC)
 
-### 4. Admin API
-
-#### `GET /api/admin/users`
-Lists all users in the system (via GoTrue Admin API).
-
-#### `PATCH /api/admin/users`
-Update user profile or role.
-- **Body:** `{ "user_id": "...", "new_role": "...", "display_name": "...", "disabled": boolean }`
-
-#### `GET /api/admin/stats`
-Returns system-wide platform statistics.
-
-## Error Codes
-
-| Code | Status | Description |
-|------|--------|-------------|
-| `UNAUTHORIZED` | 401 | Missing or invalid authentication. |
-| `FORBIDDEN` | 403 | User role does not have permission for this resource. |
-| `MISSING_REQUIRED_FIELD` | 400 | The request body is missing a required parameter. |
-| `INTERNAL_ERROR` | 500 | An unexpected error occurred on the server. |
-| `AUTH_CONFIG_ERROR` | 500 | Server-side environment variables for Auth are missing. |
+- **Admin (`admin`):** Access to all `/api/admin/*` and management tools.
+- **Teacher (`teacher`):** Access to student management, course generation, and assignments.
+- **Mature Student (`mature_student`):** Access to course generation and learning tools.
+- **School Student (`school_student`):** Access to assigned courses and learning tools only.

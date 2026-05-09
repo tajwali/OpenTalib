@@ -1,61 +1,68 @@
 # Troubleshooting Guide
 
-This document covers common issues encountered during the deployment and operation of OpenTalib.
+This guide provides solutions to common issues encountered during the setup and operation of **OpenTalib**.
 
-### ISSUE: Login returns 401 Unauthorized
-- **CAUSE:** The `SUPABASE_AUTH_URL` is missing or incorrect in the production environment file.
-- **FIX:** Ensure `SUPABASE_AUTH_URL` points directly to GoTrue (port 9999) and is present in `.next/standalone/.env.local`. Run:
+---
+
+## 1. Authentication Issues
+
+### Symptom: Login returns "401 Unauthorized" or "Invalid credentials"
+- **Potential Cause:** `SUPABASE_AUTH_URL` is incorrectly configured.
+- **Fix:** Ensure `SUPABASE_AUTH_URL` in `.env.local` points directly to your GoTrue service (usually port `9999`).
+- **Action:** Sync the config: `cp .env.local /opt/opentalib/.next/standalone/.env.local` and restart the service.
+
+### Symptom: Students cannot sign up with an Invite Code
+- **Potential Cause:** The teacher's invite code is invalid or the database schema for `user_profiles` is missing the `teacher_id` column.
+- **Fix:** Verify the teacher's code on their dashboard. Check that all database migrations in `supabase/migrations/` have been applied.
+
+---
+
+## 2. Course Generation Issues
+
+### Symptom: Generation hangs at 0% or "Generating Outline..."
+- **Potential Cause:** SSE (Server-Sent Events) streaming is being buffered by a proxy (Nginx or Cloudflare).
+- **Fix:** Disable buffering for API routes. In Nginx: `proxy_buffering off;`.
+- **Potential Cause:** API key for Google Gemini is missing or invalid.
+- **Fix:** Check server logs using `journalctl -u opentalib -f`.
+
+### Symptom: "Local network access blocked" when using Ollama
+- **Potential Cause:** SSRF protection is blocking requests to private IPs.
+- **Fix:** Set `ALLOW_LOCAL_NETWORKS=true` in your `.env.local` file.
+
+---
+
+## 3. Media & Assets
+
+### Symptom: Images or Audio return "404 Not Found"
+- **Potential Cause:** The media symlink is missing in the standalone directory.
+- **Fix:** Run the following commands:
   ```bash
-  cp .env.local .next/standalone/.env.local
-  systemctl restart opentalib
+  cd /opt/opentalib/.next/standalone/public
+  ln -s /opt/opentalib-data data
+  ```
+- **Potential Cause:** Incorrect permissions on the storage directory.
+- **Fix:** `chown -R root:root /opt/opentalib-data` (or the user running the service).
+
+---
+
+## 4. Performance & Build
+
+### Symptom: `pnpm build` fails with "JavaScript heap out of memory"
+- **Fix:** Increase the memory limit for the Node process:
+  ```bash
+  export NODE_OPTIONS="--max-old-space-size=4096"
+  pnpm build
   ```
 
-### ISSUE: Images or audio return 404 Not Found
-- **CAUSE:** The media symlink is missing or pointing to the wrong persistent storage path.
-- **FIX:** Recreate the symlink to the absolute path of your data directory:
-  ```bash
-  rm -rf .next/standalone/data
-  ln -s /opt/opentalib-data .next/standalone/data
-  ```
+### Symptom: Application is slow after a fresh restart
+- **Cause:** Next.js ISR/Static pages are being re-generated on the first request.
+- **Fix:** This is normal behavior for the first visit to each page after a build.
 
-### ISSUE: ALLOW_LOCAL_NETWORKS has no effect
-- **CAUSE:** The systemd service is not loading the environment file correctly, or `systemctl daemon-reload` was not run.
-- **FIX:** Verify the `EnvironmentFile=` line exists in your `.service` file and points to the correct `.env.local`. Then run:
-  ```bash
-  systemctl daemon-reload
-  systemctl restart opentalib
-  ```
+---
 
-### ISSUE: Course generation times out (Cloudflare 524)
-- **CAUSE:** The generation endpoint is not streaming responses correctly through the proxy.
-- **FIX:** All OpenTalib generation routes use Server-Sent Events (SSE). Ensure your proxy/WAF supports streaming and verify that the response `Content-Type` is `text/event-stream`.
+## 5. Getting More Help
 
-### ISSUE: Ollama local LLM blocked
-- **CAUSE:** The SSRF guard is blocking connections to private/local IP addresses.
-- **FIX:** Set `ALLOW_LOCAL_NETWORKS=true` in `.env.local` and ensure it is synced to `.next/standalone/.env.local`.
-
-### ISSUE: generateShortTitle cannot connect to LLM
-- **CAUSE:** `OLLAMA_BASE_URL` (or other provider URL) is missing from the standalone environment.
-- **FIX:** Add the correct base URL to `.next/standalone/.env.local`:
-  ```bash
-  OLLAMA_BASE_URL=http://YOUR_SERVER_IP:11434/v1
-  ```
-
-### ISSUE: Malformed JSON from Ollama/Local Models
-- **CAUSE:** Some smaller or older local models may output invalid JSON structures.
-- **FIX:** OpenTalib includes an automatic `jsonrepair` utility in `lib/generation/json-repair.ts` that handles most of these cases. If it persists, consider using a more capable model like `llama3.1` or `qwen2.5`.
-
-### ISSUE: PostgREST returns "relation does not exist"
-- **CAUSE:** The database schema was updated, but the PostgREST schema cache is stale.
-- **FIX:** Force PostgREST to reload its schema:
-  ```bash
-  sudo -u postgres psql -c "NOTIFY pgrst, 'reload schema';"
-  ```
-
-### ISSUE: Environment variables not loading in production
-- **CAUSE:** Next.js standalone server reads environment variables from its own directory, not the repository root.
-- **FIX:** Always sync your config: `cp .env.local .next/standalone/.env.local` after any changes.
-
-### ISSUE: Images disappear after a new deployment
-- **CAUSE:** Persistent media storage was not symlinked into the new build directory.
-- **FIX:** Confirm the symlink exists after every deploy: `ls -la .next/standalone/data`.
+If your issue is not listed here:
+1. **Check Logs:** `journalctl -u opentalib -n 100 --no-pager`
+2. **Check Database:** Verify tables exist using `\dt` in `psql`.
+3. **Verify Env:** `cat /opt/opentalib/.next/standalone/.env.local`

@@ -2,9 +2,9 @@
 
 Welcome to **OpenTalib**! This guide will help you navigate your AI-powered learning journey.
 
-## 1. Getting Started
+---
 
-There are two types of students in OpenTalib:
+## 1. Getting Started
 
 ### School Students
 If you are part of a school or a teacher's class:
@@ -12,41 +12,46 @@ If you are part of a school or a teacher's class:
 2. Enter the **Invite Code** provided by your teacher.
 3. Complete the registration. You will be automatically linked to your teacher's dashboard.
 
-### Mature Students
-If you are learning independently:
+### Mature Students (Independent Learners)
 1. Sign up directly without an invite code.
-2. You have the same course generation capabilities as a teacher, allowing you to create your own custom curriculum.
+2. You can create your own custom courses by clicking "New Course".
 
-## 2. Accessing Courses
+---
 
-- **Assigned Courses:** These are courses your teacher has selected for you. They appear on your main dashboard.
-- **Filtering:** Use the subject icons (e.g., 📐 Math, 🔬 Science) to filter your courses.
-- **Grade Filtering:** If you are a school student, you will only see courses that match your grade level or have no specific grade assigned.
+## 2. Your Dashboard
+
+Your dashboard is your learning hub:
+- **Today's Review:** Concepts that the AI has determined you need to practice today to ensure you don't forget them.
+- **My Courses:** All courses assigned to you or created by you.
+- **Study Planner:** Create a plan for your real exams. The AI will build a schedule that prioritizes your weak areas.
+
+---
 
 ## 3. The AI Classroom
 
-When you open a course, you enter the **AI Classroom**.
+When you open a course, you enter an interactive immersive classroom.
 
-### Interactive Slides
-The AI teacher will present information through interactive slides. You can listen to the teacher's voice or read the text.
+### AI Teacher & Agents
+The AI teacher explains concepts using slides. Often, other student agents will be in the room with you, asking questions that might help your understanding.
 
-### Discussions
-In many scenes, you can participate in discussions with AI agents. Click the chat icon to ask questions or share your thoughts. The AI teacher and other student agents will respond in real-time.
+### AI Tutor
+Stuck on a specific point? Click the **"?"** icon in the bottom right. This opens a private chat with the teacher agent where you can ask for more examples or a simpler explanation.
 
 ### Quizzes
-Test your knowledge with built-in quizzes. Your scores are saved and shared with your teacher to help track your understanding.
+Every concept ends with a quick quiz. These are important! Your scores help the system decide when you need to review that topic again.
 
-### Interactive Models
-Some courses include scientific models or interactive simulations. You can manipulate these to see concepts in action.
+---
 
-## 4. Progress Tracking
+## 4. Exams & Revision
 
-- **Course Completion:** When you finish all scenes in a course, it will be marked as "Completed" with a green checkmark.
-- **Quiz History:** You can view your past quiz scores and exam results in the **Quiz Results** or **Exams** section of your dashboard.
+### Mock Exams
+Access the **Mock Exam** section from your dashboard. These are timed assessments that simulate real board exam conditions. Once submitted, the AI will mark your paper and provide feedback on every question.
 
-## 5. Profile Settings
+### Revision Cards
+In any classroom, click **"📇 Revision Cards"** at the top. The AI will generate a printable set of flashcards covering all the key concepts in that course.
 
-Go to the **Profile** page (user icon) to:
-- Change your display name.
-- Update your gender (this helps the AI customize its interactions).
-- Change your password.
+---
+
+## 5. Progress Tracking
+
+Your dashboard shows your mastery of different subjects. A green checkmark on a course indicates you have completed all scenes.

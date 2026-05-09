@@ -1,59 +1,75 @@
 # Teacher Manual
 
-As a teacher, you are the conductor of the AI classroom. You can generate custom courses, manage students, and track their progress through detailed analytics.
+As a teacher in **OpenTalib**, you are the conductor of the AI classroom. You can generate custom courses, manage your students, and track their mastery through advanced analytics.
 
-## 1. Managing Students
+---
 
-**OpenTalib** uses an **Invite Code** system to link students to your account.
+## 1. Managing Your Class
+
+OpenTalib uses an **Invite Code** system to link students to your account.
 
 ### Onboarding Students
 1. Log in to your Teacher Dashboard.
 2. In the **My Students** tab, you will see your unique **Invite Code** (e.g., `ABCD-1234`).
 3. Share this code with your students.
-4. When students sign up using this code, they are automatically assigned to your "class" and you can manage their accounts.
+4. When students sign up using this code, they are automatically linked to your "class".
 
-### Managing Profiles
-You can edit student display names, update their grade level, or reset their passwords if they forget them.
+### Student Insights
+Click on any student's name to see their personal learning profile:
+- **Course Progress:** Which assignments they have started and completed.
+- **Quiz Results:** A breakdown of their scores across all topics.
+- **Weak Concepts:** Specific areas where the student is struggling based on their quiz performance.
 
-## 2. Generating Courses
+---
 
-OpenTalib allows you to create immersive, multi-agent courses from simple prompts or PDF documents.
+## 2. Creating Courses
 
-1. Click **New Course** (or go to the **Generate** page).
-2. **Topic:** Enter what you want to teach (e.g., "The Solar System for 7th Grade").
+OpenTalib allows you to create immersive, board-aligned courses from simple prompts or PDF textbooks.
+
+1. Click **"New Course"** or go to the **Generate** page.
+2. **Topic:** Enter what you want to teach (e.g., "The Solar System for 8th Grade").
 3. **Materials:** (Optional) Upload a PDF to use as the primary source material.
 4. **Settings:**
-   - **Grade:** Select Grade 1-12 to adapt the AI's difficulty.
-   - **Subject:** Manually select a subject or let the AI classify it for you.
-   - **Language:** Force a specific language or leave it as "Auto".
-5. **Generate:** The AI will first create an outline, then generate the full scenes (slides, quizzes, interactives).
+   - **Exam Board:** Select a board (e.g., FBISE, Cambridge) to align the AI's instruction style and mark schemes.
+   - **Grade:** Set the academic level (1-12).
+   - **Language:** Choose a language mix (e.g., English, English/Urdu bilingual).
+5. **Generation:** The AI will create an outline, then build the full scenes. Courses are saved incrementally.
 
-> [!TIP]
-> Courses are saved incrementally. Even if your browser crashes, the scenes generated so far will be saved to your dashboard.
+---
 
-## 3. Assigning Courses
+## 3. Assignments & Exams
 
-Once a course is generated, it is private to you until you assign it.
+### Assigning Courses
+Generated courses are private to you. To make them visible to students:
+1. Go to **"My Courses"**.
+2. Click **"Assign"** on a course card.
+3. Select individual students or your entire class.
 
-1. Go to the **My Courses** tab.
-2. Click **Assign** on the course card.
-3. Select the students you want to grant access to.
-4. Assigned courses will appear on the students' dashboards immediately.
+### Creating Mock Exams
+Exams are timed assessments based on your courses:
+1. Navigate to the **Exams** tab.
+2. Click **"Create Exam"** and select a source course.
+3. The AI will generate a set of board-aligned questions.
+4. Once assigned, students take the exam under a timer, and the AI automatically marks their submissions.
 
-## 4. Creating Exams
+---
 
-Exams are timed assessments generated from your existing courses.
+## 4. Analytics & Heatmaps
 
-1. Navigate to the **Exams** tab (or click **Create Exam** on a course card).
-2. Select the source course.
-3. The AI will generate a set of questions based on that specific course content.
-4. Students can take the exam once, and their results (score and time) will be saved for your review.
+The **Analytics** section helps you identify class-wide trends.
 
-## 5. Analytics & Progress
+### Concept Heatmap
+The Heatmap shows which concepts your students collectively find easy or difficult. 
+- **Green:** Class has mastered this concept.
+- **Yellow/Red:** Several students are struggling here. Use this to decide which topics to review in person.
 
-The **Analytics** tab provides a bird's-eye view of your classroom's performance.
+### Activity Feed
+Monitor real-time engagement, including recent quiz attempts and course completions.
 
-- **Student Progress:** See which students are active, which courses they've completed, and their last quiz scores.
-- **Popular Subjects:** Track which topics you've covered most.
-- **Recent Activity:** Monitor real-time quiz attempts to identify students who may need extra help.
-- **Detailed View:** Click on a student's name to see their full history of assignments and quiz results.
+---
+
+## 5. Tips for Teachers
+
+- **Use "Init" Mode:** You don't have to wait for a full course to finish generating. You can see the outline immediately and even start assigning it while scenes build in the background.
+- **Subject Classification:** Let the AI classify your courses into subjects to help with organization on the student dashboards.
+- **Feedback:** Review student exam submissions. The AI provides marking, but you can see exactly where students lost marks to better guide your next lesson.

@@ -8,16 +8,16 @@ This document serves as the comprehensive technical reference for the **OpenTali
 
 **OpenTalib** is an open-source, multi-user Learning Management System (LMS) powered by multi-agent AI. It transforms static educational content or PDFs into immersive interactive classrooms featuring AI teachers, student agents, real-time discussions, and automated assessments.
 
-- **Forked From:** [OpenMAIC](https://github.com/THU-MAIC/OpenMAIC) by Tsinghua University (March 2026).
+- **Forked From:** [OpenMAIC](https://github.com/THU-MAIC/OpenMAIC) by Tsinghua University.
 - **License:** **AGPL-3.0** (Must be preserved in all forks and deployments).
-- **Core Enhancements over OpenMAIC:**
-  - Full Multi-User system with persistent accounts.
-  - Role-Based Access Control (RBAC): Admin, Teacher, School Student, Mature Student.
-  - Persistent database storage via Supabase (PostgreSQL).
-  - Teacher-Student linking and course assignments.
-  - AI-generated exams and timed assessments.
-  - Production-ready deployment scripts (Systemd, Standalone mode).
-  - Incremental course saving during generation.
+- **Core Enhancements (OpenTalib 2.0):**
+  - **Full Multi-User System:** Persistent accounts with Supabase Auth.
+  - **Role-Based Access Control (RBAC):** Admin, Teacher, School Student, Mature Student roles.
+  - **Pedagogy Resolver:** Intelligent alignment with specific exam boards (FBISE, Cambridge, etc.) and grade levels.
+  - **Spaced Repetition System:** Integrated SM-2 algorithm for automated concept reviews.
+  - **Exam Preparation Engine:** AI-generated board-aligned mock exams with automated AI marking.
+  - **AI Study Planner:** Data-driven personalized study schedules based on student mastery.
+  - **Production Stability:** Optimized for single-host Proxmox LXC deployment with systemd.
 
 ---
 
@@ -57,259 +57,106 @@ This document serves as the comprehensive technical reference for the **OpenTali
                                          |
                                   +------+----------------+
                                   |      Local LLM        |
-                                  | (Ollama at .41:11434) |
+                                  | (Ollama at .50:8080)  |
                                   +-----------------------+
 ```
 
 ### 2.2 Technology Stack
 - **Frontend/Backend:** Next.js 16.1 (App Router), React 19.
 - **State Management:** Zustand (Client), Supabase (Server/Persistent).
-- **Database:** PostgreSQL 15.
+- **Database:** PostgreSQL 15 (Supabase).
 - **Authentication:** Supabase GoTrue (JWT, Cookies).
 - **Styling:** Tailwind CSS 4.
-- **Runtime:** Node.js 20.x, pnpm 10.x.
-- **Deployment:** Standalone mode, Systemd, Proxmox LXC.
-
-### 2.3 Supabase Proxy
-To ensure browser-side Supabase accessibility, all client-side requests are routed through a Next.js API proxy:
-- **Client URL:** `SUPABASE_URL` points to `https://talib.tajwali.uk/api/supabase`.
-- **Route Handler:** `app/api/supabase/[...path]/route.ts` proxies requests to the internal Supabase gateway (localhost:8000).
-- **Benefits:** Keeps Supabase behind the same domain/tunnel, simplifies CSP, and ensures consistent accessibility regardless of whether the code runs on server or browser.
+- **AI Integration:** Vercel AI SDK (Unified `callLLM` layer).
+- **Media:** Persistent local storage for generated images and audio files.
 
 ---
 
-## 3. Infrastructure (Environments)
+## 3. Core Engine Components
 
-### 3.1 Production Environment (All-in-One)
-- **Host:** 192.168.10.142 (Ubuntu 24.04 LXC)
-- **External URL:** `https://opentalib.tajwali.uk` (via Cloudflare Tunnel)
-- **App Path:** `/opt/opentalib` (branch: `main`)
-- **Data Path:** `/opt/opentalib-data` (Persistent media storage)
-- **Services:**
-  - `postgresql.service` (Port 5432)
-  - `gotrue.service` (Port 9999)
-  - `postgrest.service` (Port 3001)
-  - `opentalib.service` (Port 3000)
+### 3.1 Pedagogy Resolver
+Located in `lib/server/pedagogy-resolver.ts`, this is a two-stage agentic resolver called before course generation.
+1. **Stage 1 (Reasoning):** Uses a world-class curriculum designer prompt to analyze the topic, board, and grade level.
+2. **Stage 2 (Extraction):** Extracts the reasoning into a strict `PedagogyProfile` JSON object.
 
-### 3.2 Development Environment
-- **Host:** 192.168.10.30 (Ubuntu 22.04 LXC)
-- **App Path:** `/opt/openmaic-dev` (branch: `multiuser-dev`)
-- **Database:** Connects to Shared Supabase at `192.168.10.129`.
-- **Service:** `openmaic-dev.service` (Port 3001)
+The profile controls:
+- **Teaching Methodology:** (e.g., "i-do-we-do-you-do", "socratic").
+- **Language Mix:** (e.g., "english-urdu", "bilingual").
+- **Exam Style:** Specific constraints for boards like FBISE or Cambridge.
 
-### 3.3 Shared Services
-- **Shared Supabase:** 192.168.10.129 (External DB/Auth for dev LXC).
-- **Shared Ollama:** 192.168.10.41:11434 (LLM provider for all environments).
-- **Proxmox Host:** 192.168.1.92 (Nodes/Containers manager).
+### 3.2 Spaced Repetition (SM-2)
+Implemented in `lib/spaced-repetition/sm2.ts`, this system manages the "Review Queue" for students.
+- **Concept Keys:** Extracted from course content during generation.
+- **Mastery Tracking:** `concept_mastery` table stores the `ease_factor`, `interval_days`, and `repetitions` for every user-concept pair.
+- **Review Loop:** Quizzes taken in the classroom trigger updates to the SM-2 state. Low-mastery concepts are prioritized in the student's dashboard.
 
----
+### 3.3 Exam Engine
+Located in `app/api/exam/`, the engine handles:
+- **Question Generation:** Uses course concepts to create board-aligned questions with detailed mark schemes.
+- **Mock Exam UI:** A full-screen, timed interface for assessment.
+- **AI Marking:** An examiner agent grades student answers against the mark scheme, providing point-by-point feedback.
 
-## 4. File Structure
-
-```text
-OpenTalib/
-├── app/                  # Next.js App Router Pages and API Routes
-│   ├── api/              # Server-side API endpoints
-│   │   ├── admin/        # (NEW) Admin-only management endpoints
-│   │   ├── auth/         # (NEW) Login, Signup, Logout (GoTrue proxy)
-│   │   ├── generate/     # AI generation (Images, TTS, Content)
-│   │   ├── teacher/      # (NEW) Teacher-specific logic
-│   │   └── user/         # (NEW) Generic user progress/classrooms
-│   ├── classroom/        # Classroom viewer pages
-│   ├── login/            # (NEW) Auth pages
-│   ├── signup/           # (NEW) Auth pages
-│   └── dashboard/        # (NEW) Unified dashboard entry point
-├── components/           # React Components
-│   ├── dashboard/        # (NEW) Admin, Teacher, Student Dashboards
-│   ├── stage/            # Classroom/Stage UI components
-│   └── ui/               # Shared Shadcn UI components
-├── lib/                  # Shared Business Logic & Utilities
-│   ├── ai/               # LLM provider adapters and resolution
-│   ├── auth/             # (NEW) Auth helpers (get-user-role)
-│   ├── server/           # (NEW/MODIFIED) Server-only logic (RBAC, storage, SSRF)
-│   ├── supabase/         # (NEW) Supabase SSR client config
-│   └── types/            # TypeScript interfaces
-├── supabase/             # Database artifacts
-│   └── migrations/       # (NEW) All SQL schema migrations (001 to 006)
-├── public/               # Static assets (logos, banners)
-├── docs/                 # Documentation
-├── scripts/              # Useful dev/ops scripts
-├── .env.example          # Annotated environment template
-├── next.config.ts        # (MODIFIED) Standalone build & security headers
-└── docker-compose.yml    # Containerized stack config
-```
+### 3.4 Study Planner
+Located in `app/api/planner/`, this component generates weekly study schedules.
+- **Data Input:** Combines the student's upcoming exam date with their identified weak concepts from the SM-2 system.
+- **Plan Generation:** Creates a day-by-day plan including "study", "review", and "mock-exam" sessions.
 
 ---
 
-## 5. Database Schema
+## 4. Database Schema
 
-OpenTalib uses a relational schema in the `public` and `auth` (managed by GoTrue) schemas.
+OpenTalib uses a persistent PostgreSQL schema. Key tables:
 
-### 5.1 Key Tables (`public` schema)
-- **`user_profiles`**: Links to `auth.users`. Stores `role`, `display_name`, `invite_code`, `grade`, and `teacher_id`.
-- **`classrooms`**: Stores generated courses. Columns: `id`, `title`, `scenes` (JSONB), `topic`, `status`, `subject_id`, `grade`, `language`.
-- **`course_assignments`**: Links `classrooms` to `school_student` users. Tracked by `assigned_by` (Teacher).
-- **`subjects`**: Educational categories (Math, Science, etc.) with icons.
-- **`course_progress`**: Tracks which scenes a user has completed in a specific classroom.
-- **`quiz_results`**: Detailed scores and answers for in-course quizzes.
-- **`exams`**: AI-generated standalone assessments.
-- **`exam_results`**: Student performance on exams.
-- **`platform_settings`**: System-wide configuration.
+- `user_profiles`: Extends `auth.users` with `role`, `display_name`, `grade`, and `teacher_id`.
+- `classrooms`: Primary table for course content, metadata, and scene JSON.
+- `course_progress`: Tracks completion and last-accessed scene per user.
+- `concept_mastery`: Spaced repetition state per concept.
+- `exam_questions` / `exam_sessions` / `exam_results`: Mock exam system data.
+- `student_exams` / `study_plans`: AI study planner data.
 
 ---
 
-## 6. Authentication & Authorization
+## 5. Deployment & Operations
 
-### 6.1 GoTrue Integration
-The app uses Supabase GoTrue for authentication. Because self-hosted GoTrue runs on a different port (9999) than the gateway (8000), a custom `fetch` rewriter is used in `lib/supabase/server.ts` and `app/api/auth/login/route.ts` to route `/auth/v1` calls correctly.
+### 5.1 Infrastructure
+OpenTalib is typically deployed in a single Proxmox LXC container (Ubuntu 22.04).
+- **IP:** `192.168.10.142`
+- **Port:** `3000` (Main), `3001` (Internal Standalone).
+- **Service:** `opentalib.service` (Systemd).
 
-### 6.2 The `createClient()` Pattern
-Found in `lib/supabase/server.ts`. It initializes the `@supabase/ssr` client with cookie persistence.
-- **`getSession()`**: Reads JWT from cookies locally. Used for performance-critical checks.
-- **`getUser()`**: Makes a network call to GoTrue to verify the user. Required for security-sensitive operations.
+### 5.2 Standalone Build Pattern
+Next.js standalone mode is used for production.
+1. `pnpm build`
+2. Sync config: `cp .env.local .next/standalone/.env.local`
+3. Static files: `cp -r .next/static .next/standalone/.next/`
+4. Public assets: `cp -r public .next/standalone/`
 
-### 6.3 RBAC (Role-Based Access Control)
-Roles are enforced using `lib/server/require-role.ts`.
-- **`admin`**: Full platform control (User management, system stats).
-- **`teacher`**: Can generate courses, manage their own students, and assign courses.
-- **`mature_student`**: Self-directed learners. Can generate their own courses.
-- **`school_student`**: Can only access courses assigned by their teacher.
-
----
-
-## 7. Critical Code Patterns
-
-### 7.1 Role Check Pattern (API)
-Every protected API route must use `requireRole`.
-```typescript
-import { requireRole } from '@/lib/server/require-role';
-
-export async function POST(req: Request) {
-  const auth = await requireRole(['teacher', 'admin']);
-  if ('error' in auth) return auth.error;
-  
-  const userId = auth.user.id;
-  // logic...
-}
-```
-
-### 7.2 POST Body Parsing (Next.js 16 Bug)
-In Next.js 16, standard `request.json()` can sometimes hang or fail. Use `request.json()` but ensure a `try/catch` and appropriate content-type headers. (Note: The project previously used `request.text()` but migrated to `request.json()` for stability).
-
-### 7.3 Model Resolution
-Models are resolved in this order: `x-model` header -> `DEFAULT_MODEL` env var -> Hardcoded fallback.
-Utility: `lib/server/resolve-model.ts`.
+### 5.3 Critical Environment Variables
+- `SUPABASE_AUTH_URL`: Must point directly to GoTrue (port 9999).
+- `SUPABASE_SERVICE_KEY`: Admin key for bypass and background tasks.
+- `MEDIA_STORAGE_PATH`: Path for persistent assets (e.g., `/opt/opentalib-data`).
+- `OLLAMA_BASE_URL`: URL for local LLM inference.
 
 ---
 
-## 8. Environment Variables
+## 6. Development Workflow (Multi-Agent)
 
-| Variable | Required | Description |
-| :--- | :--- | :--- |
-| `SUPABASE_URL` | YES | `https://talib.tajwali.uk/api/supabase` (Browser proxy) |
-| `SUPABASE_AUTH_URL` | YES | **CRITICAL:** Port 9999 (Direct GoTrue) |
-| `SUPABASE_SERVICE_KEY` | YES | Service role key for admin DB operations |
-| `SUPABASE_JWT_SECRET` | YES | Must match GoTrue/PostgREST config |
-| `GOOGLE_API_KEY` | YES | For default Gemini models |
-| `ALLOW_LOCAL_NETWORKS` | NO | Set to `true` to allow private IP LLMs (Ollama) |
-| `IMAGE_NANO_BANANA_API_KEY`| YES | API Key for image generation |
+This project is developed using a multi-agent system:
+- **Orchestrator (Gemini):** Strategic planning, remote server operations (SSH/SCP), architecture decisions.
+- **Worker (Goose):** Local file creation, repetitive batch tasks.
+
+### Plan Files
+All major features are executed via formal plan files (e.g., `plan-03-phases-F-G-H.md`). Never deviate from the plan without updating the orchestrator log.
 
 ---
 
-## 9. AI & Media Configuration
+## 7. Common Issues & Fixes
 
-### 9.1 Provider Format
-Models are specified as `provider:model-id` (e.g., `google:gemini-2.0-flash`).
-
-### 9.2 Ollama Integration
-Requires `ALLOW_LOCAL_NETWORKS=true` and `OLLAMA_BASE_URL=http://192.168.10.41:11434/v1`.
-
-### 9.3 Media Storage
-Generated images and audio are stored on the filesystem at `/opt/opentalib-data`.
-The application directory `/opt/opentalib/.next/standalone/data` is a **symlink** to this path to ensure persistence across builds.
+- **401 on Redirect:** Ensure `SUPABASE_AUTH_URL` is correct in the standalone directory.
+- **Images Not Loading:** Check the symlink from `.next/standalone/public/data` to the persistent media path.
+- **PostgREST Cache:** If the schema changes, notify PostgREST via `NOTIFY pgrst, 'reload schema';`.
+- **SSE Streaming:** Generation routes require `text/event-stream`. Ensure Nginx/Cloudflare doesn't buffer responses.
 
 ---
 
-## 10. Operations
-
-### 10.1 Deployment (Dev -> Prod)
-1. Commit changes to `multiuser-dev`.
-2. Merge into `main` and push.
-3. SSH into 192.168.10.142.
-4. `cd /opt/opentalib && git pull`.
-5. `pnpm build`.
-6. `cp -r .next/static .next/standalone/.next/`.
-7. `cp -r public .next/standalone/`.
-8. `cp .env.local .next/standalone/.env.local`.
-9. `systemctl restart opentalib`.
-
-### 10.2 Database Migrations
-Always apply migrations in numerical order:
-`sudo -u postgres psql -d postgres < supabase/migrations/00X_name.sql`
-
----
-
-## 11. Known Issues & Gotchas
-
-- **Auth 401/404:** Usually caused by `SUPABASE_AUTH_URL` missing from `.next/standalone/.env.local`.
-- **Media 404:** Symlink at `.next/standalone/data` is broken or missing.
-- **SSRF Guard:** Blocks private IPs by default. Must enable `ALLOW_LOCAL_NETWORKS` for local Ollama.
-- **PostgREST Cache:** If you add a table, run `NOTIFY pgrst, 'reload schema';` or restart PostgREST.
-
----
-
-## 12. Development Workflow
-
-### 12.1 Local Setup
-1. `pnpm install`.
-2. `cp .env.example .env.local`.
-3. `pnpm dev`.
-
-### 12.2 Testing
-- **Unit:** `pnpm test`.
-- **E2E:** `pnpm test:e2e` (Requires live Supabase connection).
-
----
-
-## 13. Adding New Features
-
-### 13.1 New API Route
-1. Create a new directory and `route.ts` in `app/api/`.
-2. Wrap logic in `requireRole([...])` for protection.
-3. Use `apiSuccess`/`apiError` helpers for consistent JSON responses.
-
-### 13.2 New Database Table
-1. Create a new `.sql` file in `supabase/migrations/` with a sequential number (e.g., `007_new_table.sql`).
-2. Include `GRANT ALL` for `authenticated` and `service_role`.
-3. Apply to dev and prod databases.
-
-### 13.3 New Dashboard Component
-1. Add to `components/dashboard/`.
-2. Update `app/page.tsx` switch statement to render it based on the user's role.
-
-### 13.4 New AI Provider
-1. Add adapter logic in `lib/ai/` (if needed) or update `lib/server/provider-config.ts`.
-2. Add prefix (e.g., `CUSTOM_`) to `.env.local`.
-
----
-
-## 14. Rebranding Notes
-
-This project was rebranded from **OpenMAIC** to **OpenTalib** in May 2026.
-- The name "OpenTalib" reflects the focus on persistent, multi-user education ("Talib" meaning student/seeker of knowledge).
-- All instances of "OpenMAIC" in the UI and documentation have been updated.
-- Original credits to Tsinghua University (THU-MAIC) are maintained in the README.
-
----
-
-## 14. Test Accounts
-
-| Role | Email |
-| :--- | :--- |
-| **Admin** | `tajwali@gmail.com` |
-| **Teacher** | `teacher@test.com` |
-| **Student** | `student@test.com` |
-
----
-
-*Assisted-by: Gemini CLI (Model: Gemini 2.0 Flash)*
+*Last Updated: May 2026*

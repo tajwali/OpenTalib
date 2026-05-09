@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <b>Immersive, multi-agent learning with persistent accounts and role-based access control.</b>
+  <b>Immersive, multi-agent AI learning platform with board-alignment and personalized study planning.</b>
 </p>
 
 <p align="center">
@@ -19,31 +19,29 @@
 
 **OpenTalib** is a powerful, self-hosted Learning Management System (LMS) that leverages multi-agent AI to create immersive interactive classrooms. It transforms static topics or PDF documents into dynamic learning experiences featuring AI teachers, student agents, interactive slides, and real-time discussions.
 
-This project is a significantly extended platform featuring a full **multi-user system** with persistent accounts, role-based dashboards (Admin, Teacher, Student), and cross-device access.
+The platform is designed for academic excellence, featuring deep alignment with international exam boards, automated mock exams, and an intelligent study planner that adapts to each student's mastery level.
 
 ---
 
 ## ✨ Key Features
 
 - **Multi-User Role System:** Specialized dashboards for Admin, Teacher, School Student, and Mature Student.
-- **AI-Powered Generation:** Create full courses from simple prompts or PDF uploads.
-- **Persistent Progress:** All courses, scenes, and quiz results are saved to a persistent Supabase database.
+- **AI-Powered Pedagogy:** Smart alignment with exam boards (FBISE, Cambridge, CBSE, AQA, etc.) and grade-appropriate instruction.
+- **Spaced Repetition (SM-2):** Automated review queue tracking concept mastery for long-term retention.
+- **Mock Exam Engine:** AI-generated board-aligned exams with automated marking and point-by-point feedback.
+- **AI Study Planner:** Personalized weekly schedules based on exam dates and identified weak concepts.
+- **Content Enrichment:** On-demand mind maps and printable revision flashcards generated from lesson content.
 - **Interactive AI Classroom:** Multi-agent discussions with TTS (Text-to-Speech) and interactive whiteboard capabilities.
-- **Teacher-Student Linking:** Invite code system for teachers to manage their students and assignments.
-- **Timed Assessments:** Automated exam generation and result tracking.
-- **Flexible Deployment:** Supports Manual Ubuntu setup, Docker Compose, and Proxmox LXC.
+- **Teacher Analytics:** Concept heatmaps and progress tracking to identify students needing intervention.
 
 ---
 
 ## 📚 Documentation
 
-Detailed guides for setting up and using OpenTalib:
-
+- **[User Manual](docs/USER-MANUAL.md)** — Comprehensive guide for Students, Teachers, and Admins.
+- **[Developer Documentation](docs/OPENTALIB-DEV.md)** — Architecture, patterns, and development workflow.
 - **[Deployment Guide](docs/DEPLOYMENT.md)** — Installation, environment variables, and self-hosting instructions.
 - **[Troubleshooting Guide](docs/TROUBLESHOOTING.md)** — Solutions to common setup and operational issues.
-- **[Administrator Manual](docs/ADMIN-MANUAL.md)** — First-time setup, managing users, and platform stats.
-- **[Teacher Manual](docs/TEACHER-MANUAL.md)** — Managing students, generating courses, and assignments.
-- **[Student Manual](docs/STUDENT-MANUAL.md)** — Navigating the AI classroom and tracking progress.
 - **[API Documentation](docs/API.md)** — Endpoint reference and role-based access control.
 
 ---
@@ -62,11 +60,17 @@ For detailed instructions, see the **[Deployment Guide](docs/DEPLOYMENT.md)**.
 
 ## 🏗️ Architecture
 
-OpenTalib is designed for production stability:
-- **Frontend/Backend:** Next.js (App Router) in standalone mode.
+OpenTalib is built for scale and stability:
+- **Frontend/Backend:** Next.js 16.1 (App Router) in standalone mode.
 - **Database/Auth:** Supabase (Self-hosted or Cloud).
-- **AI Integration:** Google Gemini, OpenAI, Anthropic, and local LLMs via Ollama.
-- **Media:** Persistent storage for generated images and audio files.
+- **AI Integration:** Unified LLM layer supporting Gemini, OpenAI, Anthropic, and local LLMs (Ollama).
+- **Media:** Persistent local storage for generated images and audio files.
+
+---
+
+## 🤝 Upstream Credit
+
+This project is a significantly extended fork of [OpenMAIC](https://github.com/THU-MAIC/OpenMAIC) by **Tsinghua University (THU-MAIC)**. We acknowledge and appreciate the foundational work done by the original team.
 
 ---
 
