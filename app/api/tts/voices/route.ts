@@ -1,16 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
-// Real Kokoro voice IDs supported by the backend
 const VOICES = [
-  { id: 'af_heart',    name: 'Heart',    gender: 'female', accent: 'American English', description: 'Warm and encouraging — ideal for younger students' },
-  { id: 'af_bella',    name: 'Bella',    gender: 'female', accent: 'American English', description: 'Clear and friendly — good for all ages' },
-  { id: 'bf_emma',     name: 'Emma',     gender: 'female', accent: 'British English',  description: 'Professional and calm — suited for exam prep' },
-  { id: 'bf_isabella', name: 'Isabella', gender: 'female', accent: 'British English',  description: 'Bright and expressive — good for languages' },
-  { id: 'am_adam',     name: 'Adam',     gender: 'male',   accent: 'American English', description: 'Confident and clear — suited for STEM' },
-  { id: 'am_michael',  name: 'Michael',  gender: 'male',   accent: 'American English', description: 'Steady and reassuring — good for complex topics' },
-  { id: 'bm_george',   name: 'George',   gender: 'male',   accent: 'British English',  description: 'Authoritative and precise — professional courses' },
-  { id: 'bm_lewis',    name: 'Lewis',    gender: 'male',   accent: 'British English',  description: 'Energetic and engaging — younger students' },
+  { id: 'coral',   name: 'Coral',   gender: 'female', description: 'Warm and friendly' },
+  { id: 'nova',    name: 'Nova',    gender: 'female', description: 'Bright and energetic' },
+  { id: 'shimmer', name: 'Shimmer', gender: 'female', description: 'Clear and expressive' },
+  { id: 'echo',    name: 'Echo',    gender: 'male',   description: 'Authoritative and steady' },
+  { id: 'onyx',    name: 'Onyx',    gender: 'male',   description: 'Confident and professional' },
 ]
 
 export async function GET(request: NextRequest) {
@@ -26,13 +22,13 @@ export async function POST(request: NextRequest) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await request.json()
-  const { voiceId } = body
+  const voiceId = body.voiceId ?? body.voice ?? body.ttsVoice ?? ''
   if (!voiceId) return NextResponse.json({ error: 'voiceId required' }, { status: 400 })
 
   const voice = VOICES.find(v => v.id === voiceId)
-  if (!voice) return NextResponse.json({ error: 'Unknown voice' }, { status: 404 })
+  const voiceName = voice?.name ?? voiceId
 
-  const previewText = `Hello! I am ${voice.name}, your AI teacher for today. I will guide you through the lesson with clear explanations and worked examples. Let us begin!`
+  const previewText = `Hello! I am ${voiceName}, your AI teacher for today. I will guide you through the lesson with clear explanations and worked examples. Let us begin!`
 
   try {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
