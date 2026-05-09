@@ -22,6 +22,12 @@ import {
   ChevronUp,
   LogOut,
   UserCircle,
+  Tag,
+  Mic,
+  Languages,
+  GraduationCap,
+  BookOpen,
+  Plus,
 } from 'lucide-react';
 import { useI18n } from '@/lib/hooks/use-i18n';
 import { createLogger } from '@/lib/logger';
@@ -102,6 +108,22 @@ function HomePage() {
   const [settingsSection, setSettingsSection] = useState<
     import('@/lib/types/settings').SettingsSection | undefined
   >(undefined);
+
+  const [showContextPanel, setShowContextPanel] = useState(false);
+  const [showVoicePanel, setShowVoicePanel] = useState(false);
+
+  // Close panels on click outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-panel]')) {
+        setShowContextPanel(false);
+        setShowVoicePanel(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Draft cache for requirement text
   const { cachedValue: cachedRequirement, updateCache: updateRequirementCache } =
@@ -377,114 +399,190 @@ function HomePage() {
             <textarea
               ref={textareaRef}
               placeholder={t('upload.requirementPlaceholder')}
-              className="w-full resize-none border-0 bg-transparent px-4 pt-1 pb-2 text-[13px] leading-relaxed placeholder:text-muted-foreground/40 focus:outline-none min-h-[120px]"
+              className="w-full resize-none border-0 bg-transparent px-4 pt-4 pb-2 text-[14px] leading-relaxed placeholder:text-muted-foreground/40 focus:outline-none min-h-[100px]"
               value={form.requirement}
               onChange={(e) => updateForm('requirement', e.target.value)}
               onKeyDown={handleKeyDown}
               rows={4}
             />
 
-            {profileLoaded && (
-              <div className="px-4 py-1.5 bg-violet-50/50 dark:bg-violet-900/10 border-y border-violet-100/50 dark:border-violet-800/30 flex items-center justify-between">
-                 <p className="text-[10px] text-violet-600 dark:text-violet-400 font-medium">
-                   Fields pre-filled from your learning profile.
-                 </p>
-                 <Link href="/profile/student" className="text-[10px] text-violet-600 dark:text-violet-400 font-bold hover:underline">
-                   Edit profile
-                 </Link>
-              </div>
-            )}
+            <div className="px-4 pb-4 space-y-3">
+              {/* Row 1: Inline Selects */}
+              <div className="flex flex-wrap gap-2 items-center">
+                {/* Grade */}
+                <div className="relative">
+                  <select
+                    value={form.grade}
+                    onChange={(e) => updateForm('grade', e.target.value)}
+                    className="appearance-none h-8 pl-8 pr-8 rounded-md border border-border/50 bg-background text-[12px] font-medium hover:border-primary/50 transition-colors cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary/40"
+                  >
+                    <option value="none">All Grades</option>
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((g) => (
+                      <option key={g} value={`Grade ${g}`}>Grade {g}</option>
+                    ))}
+                  </select>
+                  <GraduationCap className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/60" />
+                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3 text-muted-foreground/40 pointer-events-none" />
+                </div>
 
-            <div className="p-5 space-y-6 border-t border-border/30">
-              
-              {/* Board & Language */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Exam board or curriculum</label>
+                {/* Subject */}
+                <div className="relative">
+                  <select
+                    value={form.subjectId}
+                    onChange={(e) => updateForm('subjectId', e.target.value)}
+                    className="appearance-none h-8 pl-8 pr-8 rounded-md border border-border/50 bg-background text-[12px] font-medium hover:border-primary/50 transition-colors cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary/40"
+                  >
+                    <option value="auto">Auto-detect Subject</option>
+                    {subjects.map((s) => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                  <BookOpen className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/60" />
+                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3 text-muted-foreground/40 pointer-events-none" />
+                </div>
+
+                {/* Board */}
+                <div className="relative">
                   <select
                     value={form.board}
                     onChange={(e) => updateForm('board', e.target.value)}
-                    className="w-full text-xs rounded-lg border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 cursor-pointer"
+                    className="appearance-none h-8 pl-8 pr-8 rounded-md border border-border/50 bg-background text-[12px] font-medium hover:border-primary/50 transition-colors cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary/40 max-w-[160px] truncate"
                   >
                     <option value="Other">Other / General</option>
-                    {boards.map((b) => (
-                      <option key={b.name} value={b.name}>{b.name}</option>
-                    ))}
+                    {['academic','professional','language','university','vocational','other']
+                      .map(cat => {
+                        const catBoards = boards.filter(b => b.category === cat)
+                        if (catBoards.length === 0) return null
+                        const labels: Record<string,string> = {
+                          academic:'🎓 Academic', professional:'💼 Professional',
+                          language:'🌐 Language', university:'🏛️ University Entrance',
+                          vocational:'🔧 Vocational', other:'📋 Other',
+                        }
+                        return (
+                          <optgroup key={cat} label={labels[cat] ?? cat}>
+                            {catBoards.map(b => (
+                              <option key={b.name} value={b.name}>{b.name}</option>
+                            ))}
+                          </optgroup>
+                        )
+                      })}
+                    <option value="__request__">+ Request new board...</option>
                   </select>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    The qualification or curriculum your student is preparing for. This helps OpenTalib teach in the right style and format for that exam.
-                  </p>
+                  <Monitor className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/60" />
+                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3 text-muted-foreground/40 pointer-events-none" />
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Language of instruction</label>
+                {/* Language */}
+                <div className="relative">
                   <select
                     value={form.instructionLanguage}
                     onChange={(e) => updateForm('instructionLanguage', e.target.value)}
-                    className="w-full text-xs rounded-lg border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 cursor-pointer"
+                    className="appearance-none h-8 pl-8 pr-8 rounded-md border border-border/50 bg-background text-[12px] font-medium hover:border-primary/50 transition-colors cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary/40"
                   >
                     {['English', 'English + Urdu', 'English + Arabic', 'Urdu', 'Arabic', 'Spanish', 'French', 'Other'].map((l) => (
                       <option key={l} value={l}>{l}</option>
                     ))}
                   </select>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    The language you want the course narration and explanations delivered in.
-                  </p>
+                  <Languages className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/60" />
+                  <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 size-3 text-muted-foreground/40 pointer-events-none" />
                 </div>
               </div>
 
-              {/* Grade & Subject */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 <div className="space-y-1.5">
-                    <label className="text-sm font-medium">Grade level</label>
-                    <select
-                      value={form.grade}
-                      onChange={(e) => updateForm('grade', e.target.value)}
-                      className="w-full text-xs rounded-lg border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 cursor-pointer"
-                    >
-                      <option value="none">All Grades / Not Applicable</option>
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((g) => (
-                        <option key={g} value={`Grade ${g}`}>Grade {g}</option>
-                      ))}
-                    </select>
-                 </div>
-                 <div className="space-y-1.5">
-                    <label className="text-sm font-medium">Subject category</label>
-                    <select
-                      value={form.subjectId}
-                      onChange={(e) => updateForm('subjectId', e.target.value)}
-                      className="w-full text-xs rounded-lg border border-border bg-background px-3 py-2 text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 cursor-pointer"
-                    >
-                      <option value="auto">Auto-detect subject</option>
-                      {subjects.map((s) => (
-                        <option key={s.id} value={s.id}>{s.icon} {s.name}</option>
-                      ))}
-                    </select>
-                 </div>
-              </div>
+              {/* Row 2: Icons/Tooltips & Enter */}
+              <div className="flex items-center gap-2">
+                {/* Context */}
+                <div className="relative" data-panel>
+                  <button
+                    type="button"
+                    onClick={() => setShowContextPanel(!showContextPanel)}
+                    className={cn(
+                      'flex items-center gap-1.5 h-8 px-3 rounded-md border text-[12px] font-medium transition-all',
+                      form.studentContext
+                        ? 'border-primary/30 bg-primary/5 text-primary'
+                        : 'border-border/50 bg-background text-muted-foreground hover:border-primary/40'
+                    )}
+                  >
+                    <Tag className="size-3.5" />
+                    <span>Context</span>
+                    {form.studentContext && (
+                      <span className="size-1.5 rounded-full bg-primary" />
+                    )}
+                  </button>
+                  <AnimatePresence>
+                    {showContextPanel && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                        className="absolute bottom-full left-0 mb-2 z-50 w-80 rounded-xl border border-border/60 bg-white dark:bg-slate-900 shadow-2xl p-4"
+                      >
+                        <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-3">Student Context</p>
+                        <StudentContextPicker
+                          value={form.studentContext}
+                          onChange={(v) => updateForm('studentContext', v)}
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
 
-              {/* Context Tag Picker */}
-              <div className="space-y-1.5">
-                <p className="text-xs text-muted-foreground mb-2">
-                  Select any tags that describe your student. OpenTalib uses this to personalise the teaching style and content difficulty.
-                </p>
-                <StudentContextPicker
-                  value={form.studentContext}
-                  onChange={(v) => updateForm('studentContext', v)}
-                />
-              </div>
+                {/* Voice */}
+                <div className="relative" data-panel>
+                  <button
+                    type="button"
+                    onClick={() => setShowVoicePanel(!showVoicePanel)}
+                    className={cn(
+                      'flex items-center gap-1.5 h-8 px-3 rounded-md border text-[12px] font-medium transition-all',
+                      form.ttsVoice
+                        ? 'border-primary/30 bg-primary/5 text-primary'
+                        : 'border-border/50 bg-background text-muted-foreground hover:border-primary/40'
+                    )}
+                  >
+                    <Mic className="size-3.5" />
+                    <span className="max-w-[80px] truncate">
+                      {form.ttsVoice ? form.ttsVoice.split('_').pop() : 'Voice'}
+                    </span>
+                  </button>
+                  <AnimatePresence>
+                    {showVoicePanel && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                        className="absolute bottom-full left-0 mb-2 z-50 w-[400px] rounded-xl border border-border/60 bg-white dark:bg-slate-900 shadow-2xl p-4 overflow-y-auto max-h-[400px]"
+                      >
+                        <VoicePicker
+                          value={form.ttsVoice}
+                          onChange={(v) => {
+                            updateForm('ttsVoice', v);
+                            setShowVoicePanel(false);
+                          }}
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
 
-              {/* Voice Picker */}
-              <div className="border-t border-border/30 pt-6">
-                <VoicePicker
-                  value={form.ttsVoice}
-                  onChange={(v) => updateForm('ttsVoice', v)}
-                />
+                <div className="flex-1" />
+
+                <button
+                  onClick={handleGenerate}
+                  disabled={!canGenerate}
+                  className={cn(
+                    'shrink-0 h-9 rounded-lg flex items-center justify-center gap-1.5 transition-all px-4',
+                    canGenerate
+                      ? 'bg-primary text-primary-foreground hover:opacity-90 shadow-lg shadow-primary/20 cursor-pointer'
+                      : 'bg-muted text-muted-foreground/40 cursor-not-allowed',
+                  )}
+                >
+                  <span className="text-sm font-bold">{t('toolbar.enterClassroom')}</span>
+                  <ArrowUp className="size-4" />
+                </button>
               </div>
             </div>
 
-            {/* Toolbar row */}
-            <div className="px-3 pb-3 flex items-end gap-2 border-t border-border/30 pt-3">
+            {/* Toolbar row (PDF, Web Search) */}
+            <div className="px-3 pb-3 flex items-center justify-between border-t border-border/30 pt-3">
               <div className="flex-1 min-w-0">
                 <GenerationToolbar
                   webSearch={form.webSearch}
@@ -499,30 +597,18 @@ function HomePage() {
                 />
               </div>
 
-              <SpeechButton
-                size="md"
-                onTranscription={(text) => {
-                  setForm((prev) => {
-                    const next = prev.requirement + (prev.requirement ? ' ' : '') + text;
-                    updateRequirementCache(next);
-                    return { ...prev, requirement: next };
-                  });
-                }}
-              />
-
-              <button
-                onClick={handleGenerate}
-                disabled={!canGenerate}
-                className={cn(
-                  'shrink-0 h-10 rounded-lg flex items-center justify-center gap-1.5 transition-all px-5',
-                  canGenerate
-                    ? 'bg-primary text-primary-foreground hover:opacity-90 shadow-lg shadow-primary/20 cursor-pointer'
-                    : 'bg-muted text-muted-foreground/40 cursor-not-allowed',
-                )}
-              >
-                <span className="text-sm font-bold">{t('toolbar.enterClassroom')}</span>
-                <ArrowUp className="size-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                <SpeechButton
+                  size="sm"
+                  onTranscription={(text) => {
+                    setForm((prev) => {
+                      const next = prev.requirement + (prev.requirement ? ' ' : '') + text;
+                      updateRequirementCache(next);
+                      return { ...prev, requirement: next };
+                    });
+                  }}
+                />
+              </div>
             </div>
           </div>
         </motion.div>
