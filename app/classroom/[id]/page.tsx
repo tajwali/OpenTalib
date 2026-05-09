@@ -246,26 +246,34 @@ export default function ClassroomDetailPage() {
             <Stage onRetryOutline={retrySingleOutline} />
           )}
 
-          {/* Revision Cards Button */}
+          {/* Revision Cards Button (Moved) */}
           {!loading && !error && stage && (
-            <div className="fixed top-4 right-20 z-50">
+            <div className="fixed bottom-4 left-4 z-50">
               <button
                 onClick={async () => {
-                  const allConceptKeys = scenes
-                    ?.flatMap((s: any) => s.conceptKeys ?? [])
-                    ?? []
+                  const scenesList = scenes ?? [];
+                  const allConceptKeys: string[] = scenesList.flatMap((scene: any) => scene.conceptKeys ?? scene.concept_keys ?? []);
+                  const uniqueKeys = [...new Set(allConceptKeys)];
+                  const fallbackKeys = uniqueKeys.length > 0 ? uniqueKeys : scenesList.map((s: any) => (s.title ?? s.name ?? 'concept').toLowerCase().replace(/\s+/g, '_'));
                   const res = await fetch('/api/content/revision-cards', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                       courseTitle: (stage as any)?.name ?? 'Course',
-                      conceptKeys: [...new Set(allConceptKeys)],
+                      conceptKeys: fallbackKeys,
                       subject: (stage as any)?.subject ?? '',
                     }),
-                  })
-                  const html = await res.text()
-                  const blob = new Blob([html], { type: 'text/html' })
-                  window.open(URL.createObjectURL(blob))
+                  });
+                  if (!res.ok) {
+                    const err = await res.json().catch(() => ({ error: 'Unknown error' }));
+                    alert(`Could not generate revision cards: ${err.error}`);
+                    return;
+                  }
+                  const html = await res.text();
+                  const blob = new Blob([html], { type: 'text/html' });
+                  const url = URL.createObjectURL(blob);
+                  window.open(url, '_blank');
+                  setTimeout(() => URL.revokeObjectURL(url), 60000);
                 }}
                 className="text-xs rounded-md border bg-background/80 backdrop-blur px-3 py-1.5 hover:bg-muted transition-colors shadow-sm"
               >
