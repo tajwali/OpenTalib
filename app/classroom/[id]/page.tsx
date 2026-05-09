@@ -245,6 +245,35 @@ export default function ClassroomDetailPage() {
           ) : (
             <Stage onRetryOutline={retrySingleOutline} />
           )}
+
+          {/* Revision Cards Button */}
+          {!loading && !error && stage && (
+            <div className="fixed top-4 right-20 z-50">
+              <button
+                onClick={async () => {
+                  const allConceptKeys = scenes
+                    ?.flatMap((s: any) => s.conceptKeys ?? [])
+                    ?? []
+                  const res = await fetch('/api/content/revision-cards', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      courseTitle: (stage as any)?.name ?? 'Course',
+                      conceptKeys: [...new Set(allConceptKeys)],
+                      subject: (stage as any)?.subject ?? '',
+                    }),
+                  })
+                  const html = await res.text()
+                  const blob = new Blob([html], { type: 'text/html' })
+                  window.open(URL.createObjectURL(blob))
+                }}
+                className="text-xs rounded-md border bg-background/80 backdrop-blur px-3 py-1.5 hover:bg-muted transition-colors shadow-sm"
+              >
+                📇 Revision Cards
+              </button>
+            </div>
+          )}
+
           <LessonTutor
             courseId={classroomId}
             sceneTitle={currentScene?.title ?? ''}
