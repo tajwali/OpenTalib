@@ -70,30 +70,17 @@ export async function POST(req: NextRequest) {
           .eq('id', session.user.id)
           .single();
 
-        if (profile?.gender) {
-          const gender = profile.gender.toLowerCase();
-
-          // ── Kokoro Gender-based Voice Override ──
-          // If using openai-tts (Kokoro), map to af_sarah/am_adam
-          if (
-            gender === 'female' &&
-            !['af_sarah', 'af_bella', 'bf_emma'].includes(requestedVoice)
-          ) {
-            ttsVoice = 'af_sarah';
-          } else if (
-            gender === 'male' &&
-            !['am_adam', 'am_michael', 'bm_george'].includes(requestedVoice)
-          ) {
-            ttsVoice = 'am_adam';
-          }
-        } else {
-          // Fallback if no gender set but using openai-tts
-          if (
-            !['af_sarah', 'af_bella', 'bf_emma', 'am_adam', 'am_michael', 'bm_george'].includes(
-              requestedVoice,
-            )
-          ) {
-            ttsVoice = 'af_sarah';
+        // Only override if requested voice is empty or 'default'
+        if (!requestedVoice || requestedVoice === 'default' || requestedVoice === '') {
+          if (profile?.gender) {
+            const gender = profile.gender.toLowerCase();
+            if (gender === 'female') {
+              ttsVoice = 'af_sarah';
+            } else if (gender === 'male') {
+              ttsVoice = 'am_adam';
+            }
+          } else {
+            ttsVoice = 'af_sarah'; // Default fallback
           }
         }
       }

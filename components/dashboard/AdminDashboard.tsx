@@ -14,7 +14,9 @@ import {
   Check,
   UserCircle,
   BarChart3,
+  Settings,
 } from 'lucide-react';
+import { SettingsDialog } from '@/components/settings';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -51,7 +53,7 @@ interface StatsData {
   };
 }
 
-type Tab = 'users' | 'subjects' | 'stats';
+type Tab = 'users' | 'subjects' | 'stats' | 'settings';
 
 type UserRole = 'admin' | 'teacher' | 'school_student' | 'mature_student';
 
@@ -73,6 +75,7 @@ interface Props {
 export default function AdminDashboard({ userEmail, displayName, userId }: Props) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>('users');
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [userCount, setUserCount] = useState<number | null>(null);
 
   // Users tab state
@@ -366,6 +369,7 @@ export default function AdminDashboard({ userEmail, displayName, userId }: Props
               { id: 'users', label: 'Users', icon: <Users className="w-4 h-4" /> },
               { id: 'subjects', label: 'Subjects', icon: <BookOpen className="w-4 h-4" /> },
               { id: 'stats', label: 'Statistics', icon: <BarChart3 className="w-4 h-4" /> },
+              { id: 'settings', label: 'Settings', icon: <Settings className="w-4 h-4" /> },
             ] as { id: Tab; label: string; icon: React.ReactNode }[]
           ).map((t) => (
             <button
@@ -923,6 +927,25 @@ export default function AdminDashboard({ userEmail, displayName, userId }: Props
                 </div>
               </>
             )}
+          </div>
+        )}
+        {tab === 'settings' && (
+          <div className="space-y-6">
+            <div className="bg-card border border-border rounded-xl p-8 text-center">
+              <Settings className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-20" />
+              <h2 className="text-xl font-bold mb-2">Platform Settings</h2>
+              <p className="text-muted-foreground max-w-md mx-auto mb-6">
+                Configure global platform defaults, API providers, and system preferences.
+                These settings affect all users and course generation processes.
+              </p>
+              <button
+                onClick={() => setSettingsOpen(true)}
+                className="px-6 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold uppercase tracking-widest hover:opacity-90 transition-opacity shadow-lg shadow-primary/20"
+              >
+                Open Settings Panel
+              </button>
+            </div>
+            <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
           </div>
         )}
       </main>

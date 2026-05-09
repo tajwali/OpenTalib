@@ -25,7 +25,7 @@ export interface Snapshot {
 }
 
 /**
- * MAIC Local Database
+ * OpenTalib Local Database
  *
  * Uses IndexedDB to store all user data locally
  * - Does not delete expired data; all data is stored permanently
@@ -175,13 +175,13 @@ export function mediaFileKey(stageId: string, elementId: string): string {
 
 // ==================== Database Definition ====================
 
-const DATABASE_NAME = 'MAIC-Database';
+const DATABASE_NAME = 'OpenTalib-Database';
 const _DATABASE_VERSION = 10;
 
 /**
- * MAIC Database Instance
+ * OpenTalib Database Instance
  */
-class MAICDatabase extends Dexie {
+class OpenTalibDatabase extends Dexie {
   // Table definitions
   stages!: EntityTable<StageRecord, 'id'>;
   scenes!: EntityTable<SceneRecord, 'id'>;
@@ -362,7 +362,7 @@ class MAICDatabase extends Dexie {
 }
 
 // Create database instance
-export const db = new MAICDatabase();
+export const db = new OpenTalibDatabase();
 
 // ==================== Helper Functions ====================
 

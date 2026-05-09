@@ -57,7 +57,7 @@ First check skill config for `accessCode`. If present, announce that a stored ac
 
 If no `accessCode` in config, ask the user how they want to use OpenTalib:
 
-1. **Use hosted OpenTalib** (recommended for quick start) — Requires an access code from open.maic.chat. No local setup needed.
+1. **Use hosted OpenTalib** (recommended for quick start) — Requires an access code from tutor.tajwali.uk. No local setup needed.
 2. **Run locally** — Clone the repo, configure provider keys, and run on your machine.
 
 If the user chooses hosted mode, load [references/hosted-mode.md](references/hosted-mode.md) and skip phases 1–4.

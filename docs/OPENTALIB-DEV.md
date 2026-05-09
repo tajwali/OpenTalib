@@ -8,7 +8,7 @@ This document serves as the comprehensive technical reference for the **OpenTali
 
 **OpenTalib** is an open-source, multi-user Learning Management System (LMS) powered by multi-agent AI. It transforms static educational content or PDFs into immersive interactive classrooms featuring AI teachers, student agents, real-time discussions, and automated assessments.
 
-- **Forked From:** [OpenMAIC](https://github.com/THU-MAIC/OpenMAIC) by Tsinghua University.
+- **Forked From:** [OpenTalib](https://github.com/THU-OpenTalib/OpenTalib) by Tsinghua University.
 - **License:** **AGPL-3.0** (Must be preserved in all forks and deployments).
 - **Core Enhancements (OpenTalib 2.0):**
   - **Full Multi-User System:** Persistent accounts with Supabase Auth.

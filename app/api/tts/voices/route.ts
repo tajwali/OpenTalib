@@ -1,18 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+// Real Kokoro voice IDs supported by the backend
 const VOICES = [
-  { id: 'alloy',   name: 'Alloy',   gender: 'neutral', accent: 'American English', description: 'Versatile and balanced' },
-  { id: 'ash',     name: 'Ash',     gender: 'neutral', accent: 'American English', description: 'Clear and modern' },
-  { id: 'ballad',  name: 'Ballad',  gender: 'neutral', accent: 'American English', description: 'Deep and resonant' },
-  { id: 'coral',   name: 'Coral',   gender: 'female',  accent: 'American English', description: 'Warm and friendly' },
-  { id: 'echo',    name: 'Echo',    gender: 'male',    accent: 'American English', description: 'Authoritative and steady' },
-  { id: 'fable',   name: 'Fable',   gender: 'neutral', accent: 'American English', description: 'Engaging and narrative' },
-  { id: 'nova',    name: 'Nova',    gender: 'female',  accent: 'American English', description: 'Bright and energetic' },
-  { id: 'onyx',    name: 'Onyx',    gender: 'male',    accent: 'American English', description: 'Confident and professional' },
-  { id: 'sage',    name: 'Sage',    gender: 'neutral', accent: 'American English', description: 'Calm and steady' },
-  { id: 'shimmer', name: 'Shimmer', gender: 'female',  accent: 'American English', description: 'Clear and expressive' },
-  { id: 'verse',   name: 'Verse',   gender: 'neutral', accent: 'American English', description: 'Poetic and fluid' },
+  { id: 'af_heart',    name: 'Heart',    gender: 'female', accent: 'American English', description: 'Warm and encouraging — ideal for younger students' },
+  { id: 'af_bella',    name: 'Bella',    gender: 'female', accent: 'American English', description: 'Clear and friendly — good for all ages' },
+  { id: 'bf_emma',     name: 'Emma',     gender: 'female', accent: 'British English',  description: 'Professional and calm — suited for exam prep' },
+  { id: 'bf_isabella', name: 'Isabella', gender: 'female', accent: 'British English',  description: 'Bright and expressive — good for languages' },
+  { id: 'am_adam',     name: 'Adam',     gender: 'male',   accent: 'American English', description: 'Confident and clear — suited for STEM' },
+  { id: 'am_michael',  name: 'Michael',  gender: 'male',   accent: 'American English', description: 'Steady and reassuring — good for complex topics' },
+  { id: 'bm_george',   name: 'George',   gender: 'male',   accent: 'British English',  description: 'Authoritative and precise — professional courses' },
+  { id: 'bm_lewis',    name: 'Lewis',    gender: 'male',   accent: 'British English',  description: 'Energetic and engaging — younger students' },
 ]
 
 export async function GET(request: NextRequest) {
@@ -37,7 +35,6 @@ export async function POST(request: NextRequest) {
   const previewText = `Hello! I am ${voice.name}, your AI teacher for today. I will guide you through the lesson with clear explanations and worked examples. Let us begin!`
 
   try {
-    // Note: In local/prod the API URL might vary. We use relative fetch or absolute if env set.
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
     
     const ttsResponse = await fetch(`${baseUrl}/api/generate/tts`, {
@@ -50,7 +47,7 @@ export async function POST(request: NextRequest) {
         text: previewText, 
         audioId: `preview_${voiceId}`,
         ttsVoice: voiceId,
-        ttsProviderId: 'openai-tts' // Backend maps this to Kokoro
+        ttsProviderId: 'openai-tts' 
       }),
     })
 
@@ -64,7 +61,6 @@ export async function POST(request: NextRequest) {
        throw new Error(data.error || 'Invalid TTS response')
     }
 
-    // Return the base64 audio as a buffer
     const audioBuffer = Buffer.from(data.base64, 'base64')
 
     return new NextResponse(audioBuffer, {

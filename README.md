@@ -70,7 +70,7 @@ OpenTalib is built for scale and stability:
 
 ## 🤝 Upstream Credit
 
-This project is a significantly extended fork of [OpenMAIC](https://github.com/THU-MAIC/OpenMAIC) by **Tsinghua University (THU-MAIC)**. We acknowledge and appreciate the foundational work done by the original team.
+This project is a significantly extended fork of [OpenTalib](https://github.com/THU-OpenTalib/OpenTalib) by **Tsinghua University (THU-OpenTalib)**. We acknowledge and appreciate the foundational work done by the original team.
 
 ---
 

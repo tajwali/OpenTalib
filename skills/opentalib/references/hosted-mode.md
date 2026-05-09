@@ -1,6 +1,6 @@
 # Hosted Mode
 
-Use this when the user has an access code from open.maic.chat and wants to skip local setup.
+Use this when the user has an access code from tutor.tajwali.uk and wants to skip local setup.
 
 ## Access Code Setup
 
@@ -11,22 +11,22 @@ Use this when the user has an access code from open.maic.chat and wants to skip 
    Edit ~/.openclaw/openclaw.json and set skills.entries.opentalib.config.accessCode to your access code (starts with sk-).
    ```
    Wait for the user to confirm before continuing. Do not ask them to paste the code in chat.
-4. Verify connectivity: `GET https://open.maic.chat/api/health` with `Authorization: Bearer <access-code>`
+4. Verify connectivity: `GET https://tutor.tajwali.uk/api/health` with `Authorization: Bearer <access-code>`
    - On success: confirm connection and proceed to generation.
-   - On failure (401): access code is invalid, ask the user to check or regenerate at open.maic.chat and update the config file.
+   - On failure (401): access code is invalid, ask the user to check or regenerate at tutor.tajwali.uk and update the config file.
    - On failure (network): suggest checking network or trying local mode.
 
 ## Generating a Classroom
 
 Follow the same generation flow as [generate-flow.md](generate-flow.md) with these differences:
 
-- **Base URL**: `https://open.maic.chat` (hardcoded, not configurable)
+- **Base URL**: `https://tutor.tajwali.uk` (hardcoded, not configurable)
 - **Authorization**: Include header `Authorization: Bearer <access-code>` on all API requests
-- **Classroom URL**: `https://open.maic.chat/classroom/{id}`
+- **Classroom URL**: `https://tutor.tajwali.uk/classroom/{id}`
 
 ### Feature Detection in Hosted Mode
 
-Before generating, query `GET https://open.maic.chat/api/health` (with auth header) to check `capabilities`. Automatically include optional feature flags (`enableWebSearch`, `enableImageGeneration`, etc.) based on what the server supports. Do not send new fields if the server does not return `capabilities` (older version). This ensures forward compatibility — the hosted instance may update on a different schedule than the local codebase.
+Before generating, query `GET https://tutor.tajwali.uk/api/health` (with auth header) to check `capabilities`. Automatically include optional feature flags (`enableWebSearch`, `enableImageGeneration`, etc.) based on what the server supports. Do not send new fields if the server does not return `capabilities` (older version). This ensures forward compatibility — the hosted instance may update on a different schedule than the local codebase.
 
 ## Quota
 
@@ -37,6 +37,6 @@ Before generating, query `GET https://open.maic.chat/api/health` (with auth head
 
 | HTTP Status | Meaning | Action |
 |-------------|---------|--------|
-| 401 | Invalid access code | Ask user to check their code or generate a new one at open.maic.chat |
+| 401 | Invalid access code | Ask user to check their code or generate a new one at tutor.tajwali.uk |
 | 403 | Quota exhausted | Inform daily limit (10), suggest trying tomorrow |
 | 500 | Server error | Suggest retrying later or switching to local mode |

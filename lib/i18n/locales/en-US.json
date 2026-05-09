@@ -6,7 +6,7 @@
     "loading": "Loading..."
   },
   "home": {
-    "slogan": "Generative Learning in Multi-Agent Interactive Classroom",
+    "slogan": "AI-Powered Teaching and Learning Platform",
     "greetingWithName": "Hi, {{name}}"
   },
   "toolbar": {
@@ -46,7 +46,7 @@
     "writingCourse": "Writing course data...",
     "success": "Classroom imported successfully",
     "error": {
-      "invalidZip": "Invalid file. Please select a valid .maic.zip file.",
+      "invalidZip": "Invalid file. Please select a valid .talib.zip file.",
       "invalidManifest": "Invalid classroom file: manifest.json is missing or corrupted.",
       "missingData": "Invalid classroom file: missing required course data.",
       "storageFull": "Import failed: browser storage is full. Try clearing old classrooms."

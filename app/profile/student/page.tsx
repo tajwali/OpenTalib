@@ -1,10 +1,13 @@
 'use client'
 import { StudentProfileEditor } from '@/components/StudentProfileEditor'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
+import { Suspense } from 'react'
 
-export default function StudentProfilePage() {
+function ProfileContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const userId = searchParams.get('userId') ?? undefined
 
   return (
     <div className="min-h-screen bg-background">
@@ -15,16 +18,26 @@ export default function StudentProfilePage() {
           </button>
           <div>
             <h1 className="text-xl font-bold">Learning Profile</h1>
-            <p className="text-xs text-muted-foreground">Manage your preferences for AI-generated courses</p>
+            <p className="text-xs text-muted-foreground">
+              {userId ? 'Manage student learning preferences' : 'Manage your preferences for AI-generated courses'}
+            </p>
           </div>
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto px-6 py-12">
         <div className="bg-card border border-border rounded-2xl p-8 shadow-sm">
-          <StudentProfileEditor onSave={() => router.push('/dashboard')} />
+          <StudentProfileEditor userId={userId} onSave={() => router.back()} />
         </div>
       </main>
     </div>
+  )
+}
+
+export default function StudentProfilePage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center">Loading...</div>}>
+      <ProfileContent />
+    </Suspense>
   )
 }

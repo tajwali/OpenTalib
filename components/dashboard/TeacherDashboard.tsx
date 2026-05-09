@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Users,
@@ -19,7 +19,23 @@ import {
   Pencil,
   Trash2,
   Activity,
+  Settings,
+  Volume2,
+  Monitor,
+  Layout,
+  ImageIcon,
+  Film,
 } from 'lucide-react';
+import { useSettingsStore, PLAYBACK_SPEEDS } from '@/lib/store/settings';
+import { TTS_PROVIDERS, getTTSVoices } from '@/lib/audio/constants';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Slider } from '@/components/ui/slider';
+import { createLogger } from '@/lib/logger';
+import { cn } from '@/lib/utils';
+
+const log = createLogger('TeacherDashboard');
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -110,7 +126,7 @@ interface HeatmapData {
   atRisk: string[];
 }
 
-type Tab = 'students' | 'courses' | 'assignments' | 'exam-results' | 'analytics';
+type Tab = 'students' | 'courses' | 'assignments' | 'exam-results' | 'analytics' | 'settings';
 
 interface ExamResultRow {
   student_name: string;
@@ -392,6 +408,12 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
               icon={<BarChart2 className="w-4 h-4" />}
               label="Analytics"
             />
+            <NavItem
+              active={tab === 'settings'}
+              onClick={() => setTab('settings')}
+              icon={<Settings className="w-4 h-4" />}
+              label="Settings"
+            />
           </nav>
         </div>
 
@@ -485,6 +507,16 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
                         </div>
                       </div>
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/profile/student?userId=${s.id}`);
+                          }}
+                          className="p-1.5 rounded-lg hover:bg-muted text-violet-600"
+                          title="Edit learning profile"
+                        >
+                          <Activity className="w-3.5 h-3.5" />
+                        </button>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -622,13 +654,6 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
                       </div>
                     </div>
                   ))}
-                {courses.filter((c) => selectedSubjectId === 'all' || c.subject_id === selectedSubjectId).length === 0 && (
-                  <div className="col-span-full py-12 text-center">
-                    <p className="text-muted-foreground text-sm">
-                      No courses found for this subject.
-                    </p>
-                  </div>
-                )}
               </div>
             )}
           </div>
@@ -1097,6 +1122,9 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
             )}
           </div>
         )}
+
+        {/* ── Tab: Settings ── */}
+        {tab === 'settings' && <TeacherSettingsPanel />}
       </main>
 
       {/* ── Student Progress Modal ── */}
@@ -1311,6 +1339,181 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
           </div>
         </Modal>
       )}
+    </div>
+  );
+}
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function TeacherSettingsPanel() {
+  const {
+    ttsProviderId,
+    ttsVoice,
+    ttsSpeed,
+    setTTSProvider,
+    setTTSVoice,
+    setTTSSpeed,
+    imageGenerationEnabled,
+    setImageGenerationEnabled,
+    videoGenerationEnabled,
+    setVideoGenerationEnabled,
+    autoPlayLecture,
+    setAutoPlayLecture,
+    playbackSpeed,
+    setPlaybackSpeed,
+  } = useSettingsStore();
+
+  const voices = useMemo(() => getTTSVoices(ttsProviderId), [ttsProviderId]);
+
+  return (
+    <div className="space-y-10 max-w-4xl">
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-2xl font-black tracking-tight text-foreground uppercase">
+            Course Generation Defaults
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            These settings apply to all courses you generate. You can override them individually on the generation screen.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+          {/* TTS Configuration */}
+          <div className="bg-card border border-border rounded-2xl p-6 space-y-6 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                <Volume2 className="w-5 h-5" />
+              </div>
+              <h3 className="font-bold text-foreground">Voice & Audio</h3>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Default TTS Provider</Label>
+                <Select value={ttsProviderId} onValueChange={(v: any) => setTTSProvider(v)}>
+                  <SelectTrigger className="rounded-xl border-border bg-muted/30">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.values(TTS_PROVIDERS).map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Default Voice</Label>
+                <Select value={ttsVoice} onValueChange={setTTSVoice}>
+                  <SelectTrigger className="rounded-xl border-border bg-muted/30">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {voices.map((v) => (
+                      <SelectItem key={v.id} value={v.id}>
+                        {v.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-3 pt-2">
+                <div className="flex justify-between items-center">
+                  <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Voice Speed</Label>
+                  <span className="text-xs font-bold font-mono text-primary">{ttsSpeed}x</span>
+                </div>
+                <Slider
+                  value={[ttsSpeed]}
+                  min={0.5}
+                  max={2.0}
+                  step={0.1}
+                  onValueChange={([v]) => setTTSSpeed(v)}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Media & Playback */}
+          <div className="bg-card border border-border rounded-2xl p-6 space-y-6 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                <Monitor className="w-5 h-5" />
+              </div>
+              <h3 className="font-bold text-foreground">Media & Interaction</h3>
+            </div>
+
+            <div className="space-y-5">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="text-sm font-bold">Auto-play Lectures</Label>
+                  <p className="text-[10px] text-muted-foreground">Speak scenes automatically when they load</p>
+                </div>
+                <Switch checked={autoPlayLecture} onCheckedChange={setAutoPlayLecture} />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Default Playback Speed</Label>
+                <Select value={playbackSpeed.toString()} onValueChange={(v) => setPlaybackSpeed(parseFloat(v) as any)}>
+                  <SelectTrigger className="rounded-xl border-border bg-muted/30">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PLAYBACK_SPEEDS.map((s) => (
+                      <SelectItem key={s} value={s.toString()}>
+                        {s}x
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center gap-2">
+                  <ImageIcon className="w-4 h-4 text-muted-foreground" />
+                  <Label className="text-sm font-bold">Image Generation</Label>
+                </div>
+                <Switch checked={imageGenerationEnabled} onCheckedChange={setImageGenerationEnabled} />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Film className="w-4 h-4 text-muted-foreground" />
+                  <Label className="text-sm font-bold">Video Generation</Label>
+                </div>
+                <Switch checked={videoGenerationEnabled} onCheckedChange={setVideoGenerationEnabled} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <div>
+          <h3 className="text-lg font-bold text-foreground uppercase tracking-tight">App Preferences</h3>
+          <p className="text-xs text-muted-foreground">Personalize your dashboard experience.</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-card border border-border rounded-2xl p-6 shadow-sm flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-muted text-muted-foreground">
+                <Layout className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-sm font-bold">Sidebar Collapsed</p>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-widest">Default state</p>
+              </div>
+            </div>
+            <Switch 
+              checked={useSettingsStore.getState().sidebarCollapsed} 
+              onCheckedChange={(v) => useSettingsStore.getState().setSidebarCollapsed(v)} 
+            />
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

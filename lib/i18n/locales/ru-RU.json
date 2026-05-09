@@ -6,7 +6,7 @@
     "loading": "Загрузка..."
   },
   "home": {
-    "slogan": "Generative Learning in Multi-Agent Interactive Classroom",
+    "slogan": "AI-Powered Teaching and Learning Platform",
     "greetingWithName": "Привет, {{name}}"
   },
   "toolbar": {
@@ -46,7 +46,7 @@
     "writingCourse": "Запись данных курса...",
     "success": "Класс успешно импортирован",
     "error": {
-      "invalidZip": "Недопустимый файл. Выберите корректный файл .maic.zip.",
+      "invalidZip": "Недопустимый файл. Выберите корректный файл .talib.zip.",
       "invalidManifest": "Недопустимый файл класса: manifest.json отсутствует или повреждён.",
       "missingData": "Недопустимый файл класса: отсутствуют необходимые данные курса.",
       "storageFull": "Импорт не удался: хранилище браузера заполнено. Удалите старые классы."

@@ -23,7 +23,6 @@ import {
   LogOut,
   UserCircle,
   Tag,
-  Mic,
   Languages,
   GraduationCap,
   BookOpen,
@@ -58,7 +57,6 @@ import { useDraftCache } from '@/lib/hooks/use-draft-cache';
 import { SpeechButton } from '@/components/audio/speech-button';
 import { BOARD_REGISTRY } from '@/lib/server/board-registry';
 import { StudentContextPicker } from '@/components/StudentContextPicker';
-import { VoicePicker } from '@/components/VoicePicker';
 import Link from 'next/link';
 
 const log = createLogger('Home');
@@ -110,7 +108,6 @@ function HomePage() {
   >(undefined);
 
   const [showContextPanel, setShowContextPanel] = useState(false);
-  const [showVoicePanel, setShowVoicePanel] = useState(false);
 
   // Close panels on click outside
   useEffect(() => {
@@ -118,7 +115,6 @@ function HomePage() {
       const target = e.target as HTMLElement;
       if (!target.closest('[data-panel]')) {
         setShowContextPanel(false);
-        setShowVoicePanel(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -445,10 +441,35 @@ function HomePage() {
                 <div className="relative">
                   <select
                     value={form.board}
-                    onChange={(e) => updateForm('board', e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === '__request__') {
+                        const boardName = window.prompt('Enter the board name (e.g. ACCA, NEBOSH, NEET):');
+                        if (boardName?.trim()) {
+                          fetch('/api/boards', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              name: boardName.trim(),
+                              description: `Requested by user: ${boardName.trim()}`,
+                              category: 'other',
+                            }),
+                          })
+                          .then(r => r.json())
+                          .then(d => {
+                            alert(d.message ?? 'Board submitted for admin approval.');
+                            setBoards(prev => [...prev, { name: boardName.trim(), description: `Requested by user: ${boardName.trim()}`, category: 'other' }]);
+                            updateForm('board', boardName.trim());
+                          })
+                          .catch(() => alert('Could not submit. Please try again.'));
+                        }
+                        return;
+                      }
+                      updateForm('board', value);
+                    }}
                     className="appearance-none h-8 pl-8 pr-8 rounded-md border border-border/50 bg-background text-[12px] font-medium hover:border-primary/50 transition-colors cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary/40 max-w-[160px] truncate"
                   >
-                    <option value="Other">Other / General</option>
+                    <option value="Other">🎓 Exam board</option>
                     {['academic','professional','language','university','vocational','other']
                       .map(cat => {
                         const catBoards = boards.filter(b => b.category === cat)
@@ -514,7 +535,7 @@ function HomePage() {
                         initial={{ opacity: 0, y: 8, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                        className="absolute bottom-full left-0 mb-2 z-50 w-80 rounded-xl border border-border/60 bg-white dark:bg-slate-900 shadow-2xl p-4"
+                        className="absolute bottom-full left-0 mb-2 z-50 w-80 rounded-xl border border-border/60 bg-white dark:bg-slate-900 shadow-2xl p-4 max-h-72 overflow-y-auto"
                       >
                         <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-3">Student Context</p>
                         <StudentContextPicker
@@ -527,41 +548,22 @@ function HomePage() {
                 </div>
 
                 {/* Voice */}
-                <div className="relative" data-panel>
-                  <button
-                    type="button"
-                    onClick={() => setShowVoicePanel(!showVoicePanel)}
-                    className={cn(
-                      'flex items-center gap-1.5 h-8 px-3 rounded-md border text-[12px] font-medium transition-all',
-                      form.ttsVoice
-                        ? 'border-primary/30 bg-primary/5 text-primary'
-                        : 'border-border/50 bg-background text-muted-foreground hover:border-primary/40'
-                    )}
-                  >
-                    <Mic className="size-3.5" />
-                    <span className="max-w-[80px] truncate">
-                      {form.ttsVoice ? form.ttsVoice.split('_').pop() : 'Voice'}
-                    </span>
-                  </button>
-                  <AnimatePresence>
-                    {showVoicePanel && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                        className="absolute bottom-full left-0 mb-2 z-50 w-[400px] rounded-xl border border-border/60 bg-white dark:bg-slate-900 shadow-2xl p-4 overflow-y-auto max-h-[400px]"
-                      >
-                        <VoicePicker
-                          value={form.ttsVoice}
-                          onChange={(v) => {
-                            updateForm('ttsVoice', v);
-                            setShowVoicePanel(false);
-                          }}
-                        />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
+                <select
+                  value={form.ttsVoice}
+                  onChange={e => updateForm('ttsVoice', e.target.value)}
+                  className="rounded-md border px-2 py-1.5 text-sm bg-background"
+                >
+                  <option value="">🎙 Voice</option>
+                  <optgroup label="Female">
+                    <option value="coral">Coral</option>
+                    <option value="nova">Nova</option>
+                    <option value="shimmer">Shimmer</option>
+                  </optgroup>
+                  <optgroup label="Male">
+                    <option value="echo">Echo</option>
+                    <option value="onyx">Onyx</option>
+                  </optgroup>
+                </select>
 
                 <div className="flex-1" />
 

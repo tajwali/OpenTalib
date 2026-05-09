@@ -25,7 +25,7 @@ async function seedDatabase(page: import('@playwright/test').Page) {
     ({ stageId, theme }) => {
       return new Promise<void>((resolve, reject) => {
         // Open without specifying version — uses current DB version, no upgrade event
-        const request = indexedDB.open('MAIC-Database');
+        const request = indexedDB.open('OpenTalib-Database');
 
         request.onsuccess = (event) => {
           const db = (event.target as IDBOpenDBRequest).result;

@@ -21,7 +21,7 @@ Establish which OpenTalib checkout will be used for setup and runtime actions.
 Clone:
 
 ```bash
-git clone https://github.com/THU-MAIC/OpenTalib.git
+git clone https://github.com/THU-OpenTalib/OpenTalib.git
 cd OpenTalib
 ```
 

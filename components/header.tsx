@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  Settings,
   Sun,
   Moon,
   Monitor,
@@ -16,7 +15,6 @@ import { useI18n } from '@/lib/hooks/use-i18n';
 import { useTheme } from '@/lib/hooks/use-theme';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { SettingsDialog } from './settings';
 import { cn } from '@/lib/utils';
 import { useStageStore } from '@/lib/store/stage';
 import { useMediaGenerationStore, isMediaPlaceholder } from '@/lib/store/media-generation';
@@ -33,7 +31,6 @@ export function Header({ currentSceneTitle, courseTitle }: HeaderProps) {
   const { t, locale, setLocale } = useI18n();
   const { theme, setTheme } = useTheme();
   const router = useRouter();
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
   const [themeOpen, setThemeOpen] = useState(false);
   const [retryingImages, setRetryingImages] = useState(false);
@@ -339,16 +336,6 @@ export function Header({ currentSceneTitle, courseTitle }: HeaderProps) {
 
           <div className="w-[1px] h-4 bg-gray-200 dark:bg-gray-700" />
 
-          {/* Settings Button */}
-          <div className="relative">
-            <button
-              onClick={() => setSettingsOpen(true)}
-              className="p-2 rounded-full text-gray-400 dark:text-gray-500 hover:bg-white dark:hover:bg-gray-700 hover:text-gray-800 dark:hover:text-gray-200 hover:shadow-sm transition-all group"
-            >
-              <Settings className="w-4 h-4 group-hover:rotate-90 transition-transform duration-500" />
-            </button>
-          </div>
-
           {showRetryImages && (
             <>
               <div className="w-[1px] h-4 bg-gray-200 dark:bg-gray-700" />
@@ -434,7 +421,6 @@ export function Header({ currentSceneTitle, courseTitle }: HeaderProps) {
           )}
         </div>
       </header>
-      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </>
   );
 }
