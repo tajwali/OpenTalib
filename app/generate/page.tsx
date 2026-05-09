@@ -108,6 +108,7 @@ function HomePage() {
   >(undefined);
 
   const [showContextPanel, setShowContextPanel] = useState(false);
+  const [isPreviewingVoice, setIsPreviewingVoice] = useState(false);
 
   // Close panels on click outside
   useEffect(() => {
@@ -358,14 +359,14 @@ function HomePage() {
           classrooms.length === 0 ? 'justify-center min-h-[calc(100dvh-8rem)]' : 'mt-[5vh]',
         )}
       >
-        <motion.img
-          src="/logo-horizontal.png"
-          alt="OpenTalib"
+        <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.1, type: 'spring', stiffness: 200, damping: 20 }}
-          className="h-12 md:h-16 mb-2 -ml-2 md:-ml-3"
-        />
+          className="mb-2 flex items-center gap-2"
+        >
+          <span className="text-2xl font-bold tracking-tight">OpenTalib</span>
+        </motion.div>
 
         <motion.p
           initial={{ opacity: 0 }}
@@ -547,23 +548,61 @@ function HomePage() {
                   </AnimatePresence>
                 </div>
 
-                {/* Voice */}
-                <select
-                  value={form.ttsVoice}
-                  onChange={e => updateForm('ttsVoice', e.target.value)}
-                  className="rounded-md border px-2 py-1.5 text-sm bg-background"
-                >
-                  <option value="">🎙 Voice</option>
-                  <optgroup label="Female">
-                    <option value="coral">Coral</option>
-                    <option value="nova">Nova</option>
-                    <option value="shimmer">Shimmer</option>
-                  </optgroup>
-                  <optgroup label="Male">
-                    <option value="echo">Echo</option>
-                    <option value="onyx">Onyx</option>
-                  </optgroup>
-                </select>
+                {/* Voice select with preview */}
+                <div className="flex items-center gap-1">
+                  <select
+                    value={form.ttsVoice}
+                    onChange={e => updateForm('ttsVoice', e.target.value)}
+                    className="rounded-md border px-2 py-1.5 text-sm bg-background"
+                  >
+                    <option value="">🎙 Voice</option>
+                    <optgroup label="Female">
+                      <option value="coral">Coral</option>
+                      <option value="nova">Nova</option>
+                      <option value="shimmer">Shimmer</option>
+                    </optgroup>
+                    <optgroup label="Male">
+                      <option value="echo">Echo</option>
+                      <option value="onyx">Onyx</option>
+                    </optgroup>
+                  </select>
+
+                  {form.ttsVoice && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (isPreviewingVoice) return;
+                        setIsPreviewingVoice(true);
+                        try {
+                          const res = await fetch('/api/tts/voices', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ voiceId: form.ttsVoice }),
+                          });
+                          if (!res.ok) throw new Error('Preview failed');
+                          const blob = await res.blob();
+                          const url = URL.createObjectURL(blob);
+                          const audio = new Audio(url);
+                          audio.onended = () => {
+                            setIsPreviewingVoice(false);
+                            URL.revokeObjectURL(url);
+                          };
+                          audio.onerror = () => {
+                            setIsPreviewingVoice(false);
+                            URL.revokeObjectURL(url);
+                          };
+                          await audio.play();
+                        } catch {
+                          setIsPreviewingVoice(false);
+                        }
+                      }}
+                      className="w-7 h-7 rounded-full border flex items-center justify-center text-xs hover:border-primary hover:text-primary transition-colors"
+                      title="Preview this voice"
+                    >
+                      {isPreviewingVoice ? '■' : '▶'}
+                    </button>
+                  )}
+                </div>
 
                 <div className="flex-1" />
 
