@@ -15,6 +15,7 @@ import {
   X,
 } from 'lucide-react';
 import { ReviewQueue } from '@/components/dashboard/ReviewQueue';
+import { StudyPlanner } from '@/components/dashboard/StudyPlanner';
 
 interface Classroom {
   id: string;
@@ -276,6 +277,10 @@ export default function MatureStudentDashboard({ userEmail, displayName }: Props
         <section className="mb-6">
           <h2 className="text-base font-medium mb-3">Today's Review</h2>
           <ReviewQueue />
+        </section>
+
+        <section className="mb-6">
+          <StudyPlanner />
         </section>
 
         {/* Stats Row */}

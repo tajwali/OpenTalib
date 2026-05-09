@@ -12,6 +12,7 @@ import {
   UserCircle,
 } from 'lucide-react';
 import { ReviewQueue } from '@/components/dashboard/ReviewQueue';
+import { StudyPlanner } from '@/components/dashboard/StudyPlanner';
 
 interface AssignedClassroom {
   id: string;
@@ -202,6 +203,10 @@ export default function SchoolStudentDashboard({ userEmail, displayName }: Props
         <section className="mb-6">
           <h2 className="text-base font-medium mb-3">Today's Review</h2>
           <ReviewQueue />
+        </section>
+
+        <section className="mb-6">
+          <StudyPlanner />
         </section>
 
         {/* Stats Row */}
