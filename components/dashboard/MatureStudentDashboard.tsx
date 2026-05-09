@@ -234,6 +234,12 @@ export default function MatureStudentDashboard({ userEmail, displayName }: Props
             </p>
           </div>
           <div className="flex items-center gap-3">
+            <a
+              href="/exam"
+              className="inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium hover:bg-muted transition-colors"
+            >
+              📝 Mock Exam
+            </a>
             <button
               onClick={() => router.push('/exam/create')}
               className="flex items-center gap-2 px-4 py-2 border border-border text-foreground rounded-lg text-sm font-medium hover:bg-muted transition-colors"
@@ -451,43 +457,31 @@ export default function MatureStudentDashboard({ userEmail, displayName }: Props
             <div className="bg-card border border-border rounded-xl overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border bg-muted/50">
-                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">
-                      Course
-                    </th>
-                    <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">
-                      Score
-                    </th>
-                    <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">
-                      Result
-                    </th>
-                    <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">
-                      Date
-                    </th>
+                  <tr className="border-b border-border bg-muted/50 text-muted-foreground text-left">
+                    <th className="px-4 py-3 font-medium text-nowrap">Course</th>
+                    <th className="px-4 py-3 font-medium text-nowrap">Score</th>
+                    <th className="px-4 py-3 font-medium text-nowrap">Date</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-border">
                   {quizHistory.map((q) => (
-                    <tr
-                      key={q.id}
-                      className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
-                    >
-                      <td className="px-4 py-3 max-w-[200px]">
-                        <p className="truncate text-foreground">
-                          {q.classroom_title ?? q.classroom_id}
-                        </p>
+                    <tr key={q.id} className="hover:bg-muted/30 transition-colors">
+                      <td className="px-4 py-3 font-medium">{q.classroom_title || 'Untitled'}</td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`font-bold ${
+                            q.percentage >= 80
+                              ? 'text-green-600'
+                              : q.percentage >= 50
+                                ? 'text-yellow-600'
+                                : 'text-red-600'
+                          }`}
+                        >
+                          {q.score}/{q.total} ({q.percentage}%)
+                        </span>
                       </td>
-                      <td className="px-4 py-3 text-center text-muted-foreground">
-                        {q.score}/{q.total}
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <ScoreBadge pct={q.percentage} />
-                      </td>
-                      <td className="px-4 py-3 text-right text-muted-foreground text-xs">
-                        {new Date(q.taken_at).toLocaleDateString(undefined, {
-                          month: 'short',
-                          day: 'numeric',
-                        })}
+                      <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                        {new Date(q.taken_at).toLocaleDateString()}
                       </td>
                     </tr>
                   ))}
@@ -498,181 +492,79 @@ export default function MatureStudentDashboard({ userEmail, displayName }: Props
         </section>
       </main>
 
-      {/* ── Add Subject Modal ── */}
+      {/* Add Subject Modal */}
       {addingSubject && (
-        <Modal onClose={() => setAddingSubject(false)} title="Add Custom Subject">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wider">
-                Subject Name
-              </label>
-              <input
-                type="text"
-                value={newSubName}
-                onChange={(e) => setNewSubName(e.target.value)}
-                placeholder="e.g. Astrophysics, Digital Art"
-                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-              />
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-card border border-border rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-4 border-b border-border flex items-center justify-between">
+              <h3 className="font-bold">Add Custom Subject</h3>
+              <button
+                onClick={() => setAddingSubject(false)}
+                className="p-1 rounded-lg hover:bg-muted transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
-            <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5 uppercase tracking-wider">
-                Select Icon
-              </label>
-              <div className="grid grid-cols-6 gap-2">
-                {['📚', '🔬', '💻', '🎨', '🏥', '⚖️', '🌍', '🛠️', '🧬', '🧠', '🎹', '🏀'].map(
-                  (icon) => (
-                    <button
-                      key={icon}
-                      onClick={() => setNewSubIcon(icon)}
-                      className={`text-xl p-2 rounded-lg border transition-all ${newSubIcon === icon ? 'bg-primary/10 border-primary ring-1 ring-primary' : 'border-border hover:bg-muted'}`}
-                    >
-                      {icon}
-                    </button>
-                  ),
-                )}
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+                  Subject Name
+                </label>
+                <input
+                  type="text"
+                  autoFocus
+                  value={newSubName}
+                  onChange={(e) => setNewSubName(e.target.value)}
+                  placeholder="e.g. Physics"
+                  className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all"
+                />
               </div>
+              <div>
+                <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+                  Icon (Emoji)
+                </label>
+                <div className="grid grid-cols-6 gap-2">
+                  {['📚', '🧪', '🧬', '📐', '🌍', '⚖️', '💻', '🎨', '🧠', '🎭', '🎼', '⚽'].map(
+                    (emoji) => (
+                      <button
+                        key={emoji}
+                        onClick={() => setNewSubIcon(emoji)}
+                        className={`text-xl p-2 rounded-lg border transition-all ${
+                          newSubIcon === emoji
+                            ? 'border-primary bg-primary/10'
+                            : 'border-border hover:bg-muted'
+                        }`}
+                      >
+                        {emoji}
+                      </button>
+                    ),
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={handleAddSubject}
+                disabled={subSaving || !newSubName.trim()}
+                className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-bold hover:opacity-90 disabled:opacity-50 transition-all shadow-lg shadow-primary/20"
+              >
+                {subSaving ? 'Saving...' : 'Add Subject'}
+              </button>
             </div>
-            <button
-              onClick={handleAddSubject}
-              disabled={subSaving || !newSubName.trim()}
-              className="w-full py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-all shadow-md shadow-primary/20"
-            >
-              {subSaving ? 'Adding...' : 'Add Subject'}
-            </button>
           </div>
-        </Modal>
-      )}
-    </div>
-  );
-}
-
-function Modal({
-  children,
-  onClose,
-  title,
-}: {
-  children: React.ReactNode;
-  onClose: () => void;
-  title: string;
-}) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-card border border-border rounded-2xl shadow-xl w-full max-w-sm max-h-[85vh] flex flex-col">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-          <h3 className="font-semibold text-foreground">{title}</h3>
-          <button
-            onClick={onClose}
-            className="p-1 rounded hover:bg-muted text-muted-foreground transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-        <div className="p-5">{children}</div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-function ExamCard({ exam, onNavigate }: { exam: Exam; onNavigate: () => void }) {
-  const r = exam.result;
-  const pct = r ? Math.round(r.percentage) : null;
-  const scoreColor =
-    pct === null
-      ? ''
-      : pct >= 80
-        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-        : pct >= 60
-          ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
-          : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400';
-
-  return (
-    <div className="bg-card border border-border rounded-xl p-4 space-y-3">
-      <div className="flex items-start justify-between gap-2">
-        <p className="font-medium text-sm text-foreground line-clamp-2">{exam.title}</p>
-        {exam.attempted && <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />}
-      </div>
-      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-        <span>{exam.question_count} questions</span>
-        <span>{exam.time_limit_minutes} min</span>
-        <span className="capitalize">{exam.difficulty}</span>
-      </div>
-      {r ? (
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className={`px-2.5 py-1 rounded-lg text-sm font-bold ${scoreColor}`}>
-              {r.score}/{r.total_questions} — {pct}%
-            </span>
-            {r.submitted_at && (
-              <span className="text-xs text-muted-foreground">
-                {new Date(r.submitted_at).toLocaleDateString(undefined, {
-                  month: 'short',
-                  day: 'numeric',
-                })}
-              </span>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={onNavigate}
-              className="text-xs px-3 py-1.5 border border-border rounded-lg hover:bg-muted transition-colors text-muted-foreground"
-            >
-              Review
-            </button>
-            <button
-              onClick={onNavigate}
-              className="text-xs px-3 py-1.5 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity"
-            >
-              Retake
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-muted-foreground">Not taken yet</span>
-          <button
-            onClick={onNavigate}
-            className="text-xs px-3 py-1.5 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity"
-          >
-            Take Exam →
-          </button>
         </div>
       )}
     </div>
   );
 }
 
-function ScoreBadge({ pct, label }: { pct: number; label?: string }) {
-  const rounded = Math.round(pct);
-  const color =
-    rounded >= 80
-      ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-      : rounded >= 60
-        ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
-        : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400';
+function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: any }) {
   return (
-    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${color}`}>
-      {label ?? `${rounded}%`}
-    </span>
-  );
-}
-
-function StatCard({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: number | string;
-}) {
-  return (
-    <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3">
-      {icon}
+    <div className="bg-card border border-border p-4 rounded-xl flex items-center gap-4">
+      <div className="p-2 bg-muted rounded-lg">{icon}</div>
       <div>
-        <p className="text-xl font-bold text-foreground">{value}</p>
-        <p className="text-xs text-muted-foreground">{label}</p>
+        <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
+          {label}
+        </p>
+        <p className="text-lg font-bold">{value}</p>
       </div>
     </div>
   );
@@ -687,86 +579,130 @@ function CourseCard({
 }: {
   classroom: Classroom;
   subjects: Subject[];
-  onUpdateSubject: (id: string, subId: string) => void;
+  onUpdateSubject: (cid: string, sid: string) => void;
   onClick: () => void;
   onDelete: () => void;
 }) {
-  const date = new Date(classroom.created_at).toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-  const displayTitle = (classroom.short_title ?? classroom.title ?? '').slice(0, 60);
+  const [showSubjectMenu, setShowSubjectMenu] = useState(false);
+
   return (
-    <div className="relative group bg-card border border-border rounded-xl p-5 hover:border-primary/50 hover:shadow-md transition-all flex flex-col h-full">
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onDelete();
-        }}
-        className="absolute top-3 right-3 p-1.5 rounded-lg text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
-        title="Delete course"
-      >
-        <Trash2 className="w-3.5 h-3.5" />
-      </button>
-      <div onClick={onClick} className="flex-1 cursor-pointer">
-        <div className="flex items-start justify-between mb-2 pr-6">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-bold uppercase tracking-wider">
-              {classroom.status}
+    <div className="group bg-card border border-border rounded-2xl overflow-hidden hover:shadow-xl hover:shadow-primary/5 transition-all flex flex-col relative">
+      <div className="p-5 flex-1 cursor-pointer" onClick={onClick}>
+        <div className="flex items-start justify-between mb-4">
+          <div className="w-12 h-12 bg-muted rounded-2xl flex items-center justify-center text-2xl shadow-inner">
+            {classroom.subject_icon || '📚'}
+          </div>
+          {classroom.completed && (
+            <div className="flex items-center gap-1 text-[10px] font-bold text-green-600 bg-green-50 px-2.5 py-1 rounded-full uppercase tracking-wider">
+              <CheckCircle className="w-3.5 h-3.5" />
+              Completed
+            </div>
+          )}
+        </div>
+
+        <h3 className="font-bold text-foreground mb-1 group-hover:text-primary transition-colors line-clamp-2 leading-snug">
+          {classroom.short_title || classroom.title}
+        </h3>
+        <p className="text-xs text-muted-foreground mb-4 line-clamp-1 opacity-80 font-medium">
+          {classroom.subject_name || classroom.topic}
+        </p>
+
+        <div className="flex items-center justify-between text-[10px] text-muted-foreground font-bold uppercase tracking-widest">
+          <span className="opacity-60">Created {new Date(classroom.created_at).toLocaleDateString()}</span>
+          <div className="w-8 h-8 rounded-xl bg-muted flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-all group-hover:translate-x-1">
+            →
+          </div>
+        </div>
+      </div>
+
+      <div className="px-5 py-3 bg-muted/30 border-t border-border flex items-center justify-between gap-2">
+        <div className="relative flex-1">
+          <button
+            onClick={() => setShowSubjectMenu(!showSubjectMenu)}
+            className="w-full text-left px-3 py-1.5 rounded-lg border border-border bg-background text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:bg-muted transition-colors flex items-center justify-between"
+          >
+            <span className="truncate">{classroom.subject_name || 'Set Subject'}</span>
+            <Plus className={`w-3 h-3 transition-transform ${showSubjectMenu ? 'rotate-45' : ''}`} />
+          </button>
+
+          {showSubjectMenu && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setShowSubjectMenu(false)} />
+              <div className="absolute bottom-full left-0 w-full mb-1 bg-card border border-border rounded-xl shadow-xl z-20 max-h-48 overflow-y-auto p-1 animate-in slide-in-from-bottom-2 duration-200">
+                <button
+                  onClick={() => {
+                    onUpdateSubject(classroom.id, 'none');
+                    setShowSubjectMenu(false);
+                  }}
+                  className="w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:bg-muted"
+                >
+                  None
+                </button>
+                {subjects.map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => {
+                      onUpdateSubject(classroom.id, s.id);
+                      setShowSubjectMenu(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 hover:bg-muted ${
+                      classroom.subject_id === s.id ? 'text-primary bg-primary/5' : 'text-foreground'
+                    }`}
+                  >
+                    <span>{s.icon}</span>
+                    <span className="truncate">{s.name}</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+        <button
+          onClick={onDelete}
+          className="p-1.5 rounded-lg border border-border bg-background text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors"
+          title="Delete course"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ExamCard({ exam, onNavigate }: { exam: Exam; onNavigate: () => void }) {
+  return (
+    <div
+      onClick={onNavigate}
+      className="group bg-card border border-border p-4 rounded-xl cursor-pointer hover:shadow-md transition-all flex items-center justify-between relative overflow-hidden"
+    >
+      <div className="flex items-center gap-4">
+        <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+          <FileText className="w-5 h-5" />
+        </div>
+        <div>
+          <h4 className="text-sm font-bold group-hover:text-primary transition-colors">
+            {exam.title}
+          </h4>
+          <div className="flex items-center gap-3 mt-0.5">
+            <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">
+              {exam.difficulty} · {exam.time_limit_minutes}m
             </span>
-            {classroom.grade && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-bold">
-                G{classroom.grade}
+            {exam.attempted && exam.result && (
+              <span
+                className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
+                  exam.result.percentage >= 50
+                    ? 'bg-green-50 text-green-600'
+                    : 'bg-red-50 text-red-600'
+                }`}
+              >
+                Score: {exam.result.percentage}%
               </span>
             )}
           </div>
-          <span className="text-xs text-muted-foreground">{date}</span>
         </div>
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <p className="font-medium text-sm text-foreground group-hover:text-primary transition-colors">
-            {displayTitle}
-          </p>
-          <span
-            className="px-1.5 py-0.5 rounded bg-muted text-[10px] text-muted-foreground font-mono hover:bg-muted/80 transition-colors cursor-pointer shrink-0"
-            title="Click to copy full course ID"
-            onClick={(e) => {
-              e.stopPropagation();
-              navigator.clipboard.writeText(classroom.id);
-            }}
-          >
-            #{classroom.id.slice(-6)}
-          </span>
-        </div>
-        {classroom.short_title && classroom.title !== classroom.short_title && (
-          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{classroom.title}</p>
-        )}
       </div>
-
-      <div className="mt-4 pt-3 border-t border-border/50 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {classroom.completed && (
-            <span title="Completed" className="text-green-500">
-              <CheckCircle className="w-3.5 h-3.5" />
-            </span>
-          )}
-          <select
-            value={classroom.subject_id || 'none'}
-            onChange={(e) => onUpdateSubject(classroom.id, e.target.value)}
-            onClick={(e) => e.stopPropagation()}
-            className="text-[10px] px-2 py-1 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-bold border-0 cursor-pointer focus:ring-1 focus:ring-purple-400/50 appearance-none hover:bg-purple-200 dark:hover:bg-purple-800/40 transition-colors"
-          >
-            <option value="none">No Subject</option>
-            {subjects.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.icon} {s.name}
-              </option>
-            ))}
-          </select>
-        </div>
-        <button onClick={onClick} className="text-xs font-medium text-primary hover:underline">
-          Open →
-        </button>
+      <div className="text-muted-foreground group-hover:text-primary transition-colors translate-x-0 group-hover:translate-x-1 transition-transform">
+        →
       </div>
     </div>
   );

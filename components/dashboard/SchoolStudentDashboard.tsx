@@ -174,6 +174,12 @@ export default function SchoolStudentDashboard({ userEmail, displayName }: Props
             </p>
           </div>
           <div className="flex items-center gap-1">
+            <a
+              href="/exam"
+              className="inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium hover:bg-muted transition-colors mr-2"
+            >
+              📝 Mock Exam
+            </a>
             <button
               onClick={() => router.push('/profile')}
               className="p-2 rounded-lg text-muted-foreground hover:bg-muted transition-colors"
@@ -270,34 +276,6 @@ export default function SchoolStudentDashboard({ userEmail, displayName }: Props
           )}
         </section>
 
-        {/* Exams */}
-        <section>
-          <h2 className="text-lg font-semibold mb-4">My Exams</h2>
-          {loading ? (
-            <div className="space-y-2">
-              {[1, 2].map((i) => (
-                <div key={i} className="h-20 rounded-lg bg-muted animate-pulse" />
-              ))}
-            </div>
-          ) : exams.length === 0 ? (
-            <div className="text-center py-10 border-2 border-dashed border-border rounded-xl">
-              <FileText className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-              <p className="text-muted-foreground text-sm">No exams yet</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {exams.map((e, idx) => (
-                <ExamCard
-                  key={e.id}
-                  exam={e}
-                  index={idx}
-                  onNavigate={() => router.push(`/exam/${e.id}`)}
-                />
-              ))}
-            </div>
-          )}
-        </section>
-
         {/* Quiz History */}
         <section>
           <h2 className="text-lg font-semibold mb-4">Recent Quiz Results</h2>
@@ -315,43 +293,31 @@ export default function SchoolStudentDashboard({ userEmail, displayName }: Props
             <div className="bg-card border border-border rounded-xl overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border bg-muted/50">
-                    <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">
-                      Course
-                    </th>
-                    <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">
-                      Score
-                    </th>
-                    <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">
-                      Result
-                    </th>
-                    <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">
-                      Date
-                    </th>
+                  <tr className="border-b border-border bg-muted/50 text-muted-foreground text-left">
+                    <th className="px-4 py-3 font-medium">Course</th>
+                    <th className="px-4 py-3 font-medium">Score</th>
+                    <th className="px-4 py-3 font-medium">Date</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-border">
                   {quizHistory.map((q) => (
-                    <tr
-                      key={q.id}
-                      className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
-                    >
-                      <td className="px-4 py-3 max-w-[200px]">
-                        <p className="truncate text-foreground">
-                          {q.classroom_title ?? q.classroom_id}
-                        </p>
+                    <tr key={q.id} className="hover:bg-muted/30 transition-colors">
+                      <td className="px-4 py-3 font-medium">{q.classroom_title || 'Untitled'}</td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`font-bold ${
+                            q.percentage >= 80
+                              ? 'text-green-600'
+                              : q.percentage >= 50
+                                ? 'text-yellow-600'
+                                : 'text-red-600'
+                          }`}
+                        >
+                          {q.score}/{q.total} ({q.percentage}%)
+                        </span>
                       </td>
-                      <td className="px-4 py-3 text-center text-muted-foreground">
-                        {q.score}/{q.total}
-                      </td>
-                      <td className="px-4 py-3 text-center">
-                        <ScoreBadge pct={q.percentage} />
-                      </td>
-                      <td className="px-4 py-3 text-right text-muted-foreground text-xs">
-                        {new Date(q.taken_at).toLocaleDateString(undefined, {
-                          month: 'short',
-                          day: 'numeric',
-                        })}
+                      <td className="px-4 py-3 text-muted-foreground">
+                        {new Date(q.taken_at).toLocaleDateString()}
                       </td>
                     </tr>
                   ))}
@@ -365,147 +331,50 @@ export default function SchoolStudentDashboard({ userEmail, displayName }: Props
   );
 }
 
+function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: any }) {
+  return (
+    <div className="bg-card border border-border p-4 rounded-xl flex items-center gap-4">
+      <div className="p-2 bg-muted rounded-lg">{icon}</div>
+      <div>
+        <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">
+          {label}
+        </p>
+        <p className="text-lg font-bold">{value}</p>
+      </div>
+    </div>
+  );
+}
+
 function CourseCard({ classroom, onClick }: { classroom: AssignedClassroom; onClick: () => void }) {
-  const date = new Date(classroom.assigned_at).toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-  });
   return (
     <div
       onClick={onClick}
-      className="group bg-card border border-border rounded-xl p-5 hover:border-primary/50 hover:shadow-md transition-all cursor-pointer flex flex-col h-full"
+      className="group bg-card border border-border p-5 rounded-xl cursor-pointer hover:shadow-md transition-all relative overflow-hidden"
     >
       <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-bold uppercase tracking-wider">
-            {classroom.status}
-          </span>
-          {classroom.completed && (
-            <span title="Completed" className="text-green-500">
-              <CheckCircle className="w-4 h-4" />
-            </span>
-          )}
+        <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center text-xl">
+          {classroom.subject_icon || '📚'}
         </div>
-        <span className="text-xs text-muted-foreground">{date}</span>
-      </div>
-      <div className="mb-4">
-        <h3 className="font-bold text-foreground group-hover:text-primary transition-colors line-clamp-2">
-          {classroom.short_title ?? classroom.title}
-        </h3>
-        <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{classroom.topic}</p>
-      </div>
-      <div className="mt-auto pt-4 border-t border-border/50 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-lg">{classroom.subject_icon ?? '📚'}</span>
-          <span className="text-xs font-medium text-muted-foreground">
-            {classroom.subject_name ?? 'General'}
-          </span>
-        </div>
-        <span className="text-xs font-medium text-primary group-hover:underline">Start →</span>
-      </div>
-    </div>
-  );
-}
-
-function ExamCard({ exam, index, onNavigate }: { exam: Exam; index: number; onNavigate: () => void }) {
-  const r = exam.result;
-  const pct = r ? Math.round(r.percentage) : null;
-  const scoreColor =
-    pct === null
-      ? ''
-      : pct >= 80
-        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-        : pct >= 60
-          ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
-          : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400';
-
-  return (
-    <div className="bg-card border border-border rounded-xl p-4 space-y-3">
-      <div className="flex items-start justify-between gap-2">
-        <p className="font-medium text-sm text-foreground line-clamp-2">
-          Exam #{index + 1} — {exam.title}
-        </p>
-        {exam.attempted && <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />}
-      </div>
-      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-        <span>{exam.question_count} questions</span>
-        <span>{exam.time_limit_minutes} min</span>
-      </div>
-      {r ? (
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className={`px-2.5 py-1 rounded-lg text-sm font-bold ${scoreColor}`}>
-              {r.score}/{r.total_questions} — {pct}%
-            </span>
-            {r.submitted_at && (
-              <span className="text-xs text-muted-foreground">
-                {new Date(r.submitted_at).toLocaleDateString(undefined, {
-                  month: 'short',
-                  day: 'numeric',
-                })}
-              </span>
-            )}
+        {classroom.completed && (
+          <div className="flex items-center gap-1 text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full uppercase">
+            <CheckCircle className="w-3 h-3" />
+            Done
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={onNavigate}
-              className="text-xs px-3 py-1.5 border border-border rounded-lg hover:bg-muted transition-colors text-muted-foreground"
-            >
-              Review Results
-            </button>
-            <button
-              onClick={onNavigate}
-              className="text-xs px-3 py-1.5 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity"
-            >
-              Retake
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="flex items-center justify-between">
-          <span className="text-xs text-muted-foreground">Not taken yet</span>
-          <button
-            onClick={onNavigate}
-            className="text-xs px-3 py-1.5 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity"
-          >
-            Take Exam →
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
+        )}
+      </div>
 
-function ScoreBadge({ pct }: { pct: number }) {
-  const rounded = Math.round(pct);
-  const color =
-    rounded >= 80
-      ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-      : rounded >= 60
-        ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
-        : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400';
-  return (
-    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${color}`}>
-      {rounded}%
-    </span>
-  );
-}
+      <h3 className="font-bold text-foreground mb-1 group-hover:text-primary transition-colors line-clamp-2">
+        {classroom.short_title || classroom.title}
+      </h3>
+      <p className="text-xs text-muted-foreground mb-4 line-clamp-1">
+        {classroom.subject_name || classroom.topic}
+      </p>
 
-function StatCard({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: number | string;
-}) {
-  return (
-    <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3">
-      {icon}
-      <div>
-        <p className="text-xl font-bold text-foreground">{value}</p>
-        <p className="text-xs text-muted-foreground">{label}</p>
+      <div className="flex items-center justify-between text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+        <span>Assigned {new Date(classroom.assigned_at).toLocaleDateString()}</span>
+        <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+          →
+        </div>
       </div>
     </div>
   );
