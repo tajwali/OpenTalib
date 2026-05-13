@@ -260,13 +260,18 @@ function HomePage() {
   };
 
   const handleGenerate = async () => {
+    if (isStarting) return;
+    setIsStarting(true);
     if (!currentModelId) {
+      setSettingsOpen(false); // Close other if open
       setSettingsOpen(true);
+      setIsStarting(false);
       return;
     }
 
     if (!form.requirement.trim()) {
       setError(t('upload.requirementRequired'));
+      setIsStarting(false);
       return;
     }
 
@@ -337,6 +342,9 @@ function HomePage() {
     } catch (err) {
       log.error('Error preparing generation:', err);
       setError(err instanceof Error ? err.message : t('upload.generateFailed'));
+      setIsStarting(false);
+    } finally {
+      // We keep it true on success until page navigates
     }
   };
 
@@ -651,16 +659,25 @@ function HomePage() {
 
                 <button
                   onClick={handleGenerate}
-                  disabled={!canGenerate}
+                  disabled={!canGenerate || isStarting}
                   className={cn(
-                    'shrink-0 h-9 rounded-lg flex items-center justify-center gap-1.5 transition-all px-4',
-                    canGenerate
+                    'shrink-0 h-9 rounded-lg flex items-center justify-center gap-2 transition-all px-4 min-w-[140px]',
+                    canGenerate && !isStarting
                       ? 'bg-primary text-primary-foreground hover:opacity-90 shadow-lg shadow-primary/20 cursor-pointer'
                       : 'bg-muted text-muted-foreground/40 cursor-not-allowed',
                   )}
                 >
-                  <span className="text-sm font-bold">{t('toolbar.enterClassroom')}</span>
-                  <ArrowUp className="size-4" />
+                  {isStarting ? (
+                    <>
+                      <div className="size-3.5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                      <span className="text-sm font-bold">Preparing your lesson...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-sm font-bold">{t('toolbar.enterClassroom')}</span>
+                      <ArrowUp className="size-4" />
+                    </>
+                  )}
                 </button>
               </div>
             </div>

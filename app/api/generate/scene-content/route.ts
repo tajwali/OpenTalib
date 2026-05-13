@@ -124,13 +124,25 @@ export async function POST(req: NextRequest) {
           userPrompt: string,
           images?: Array<{ id: string; src: string }>,
         ): Promise<string> => {
-          const updatedSystemPrompt = systemPrompt + 
+          let updatedSystemPrompt = systemPrompt + 
             '\n\nAlso output a "conceptKeys" array in your JSON: 2-5 short snake_case strings naming the core concepts in this scene.' +
             '\nExample: ["prime_numbers", "factor_trees", "composite_numbers"]' +
             '\n\nIMAGE ACCURACY RULES:' +
             '\n- If an image is a diagram, it MUST be a high-quality educational diagram.' +
             '\n- Use labelled diagrams, flowcharts, or scientific illustrations where appropriate.' +
             '\n- Ensure absolute factual accuracy: no text hallucinations, consistent labels, and scientifically correct representations.';
+          
+          if (outline.type === 'quiz') {
+            updatedSystemPrompt += '\n\nCRITICAL JSON RULES:' +
+              '\n- Return ONLY raw JSON. No markdown. No backticks. No explanation.' +
+              '\n- Start with { end with }' +
+              '\n- Double quotes only, no single quotes' +
+              '\n- No trailing commas' +
+              '\n- Option text under 10 words each' +
+              '\n- Question text under 20 words' +
+              '\n- Do not include thinking blocks or <think> tags';
+          }
+
           const finalSystemPrompt = pedagogyHeader ? pedagogyHeader + '\n\n' + updatedSystemPrompt : updatedSystemPrompt;
           if (images?.length && hasVision) {
             const result = await callLLM(
@@ -213,8 +225,32 @@ export async function POST(req: NextRequest) {
           );
         } catch (parseError) {
           if (effectiveOutline.type === 'quiz') {
-            console.error('[Scene Content API] Failed to parse, using fallback for quiz scene');
+            log.error('[Scene Content API] Failed to parse quiz, attempting simple retry...');
 
+            try {
+              const retrySystem = 'You are an educational assistant. Return ONLY a raw JSON array of one multiple-choice question. No markdown, no explanation.';
+              const retryUser = `Create one multiple-choice question about: ${effectiveOutline.title}. 
+Description: ${effectiveOutline.description}
+Format: [{"type":"single","question":"...","options":[{"label":"...","value":"A"},...],"answer":["A"],"analysis":"...","points":10}]`;
+              
+              const retryRaw = await aiCall(retrySystem, retryUser);
+              const { parseJsonResponse } = await import('@/lib/generation/json-repair');
+              const retryQuestions = parseJsonResponse(retryRaw);
+              
+              if (retryQuestions && Array.isArray(retryQuestions) && retryQuestions.length > 0) {
+                const content = { questions: retryQuestions, conceptKeys: ['retry_success'] };
+                controller.enqueue(
+                  encoder.encode(
+                    `data: ${JSON.stringify({ success: true, content, effectiveOutline })}\n\n`
+                  )
+                );
+                return;
+              }
+            } catch (retryError) {
+              log.error('[Scene Content API] Quiz retry failed:', retryError);
+            }
+
+            log.warn('[Scene Content API] Using generic fallback for quiz scene');
             const sceneName = effectiveOutline.title;
             const fallbackQuizScene = {
               questions: [
