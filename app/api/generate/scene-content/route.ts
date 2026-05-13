@@ -124,7 +124,13 @@ export async function POST(req: NextRequest) {
           userPrompt: string,
           images?: Array<{ id: string; src: string }>,
         ): Promise<string> => {
-          const updatedSystemPrompt = systemPrompt + '\n\nAlso output a "conceptKeys" array in your JSON: 2-5 short snake_case strings naming the core concepts in this scene.\nExample: ["prime_numbers", "factor_trees", "composite_numbers"]';
+          const updatedSystemPrompt = systemPrompt + 
+            '\n\nAlso output a "conceptKeys" array in your JSON: 2-5 short snake_case strings naming the core concepts in this scene.' +
+            '\nExample: ["prime_numbers", "factor_trees", "composite_numbers"]' +
+            '\n\nIMAGE ACCURACY RULES:' +
+            '\n- If an image is a diagram, it MUST be a high-quality educational diagram.' +
+            '\n- Use labelled diagrams, flowcharts, or scientific illustrations where appropriate.' +
+            '\n- Ensure absolute factual accuracy: no text hallucinations, consistent labels, and scientifically correct representations.';
           const finalSystemPrompt = pedagogyHeader ? pedagogyHeader + '\n\n' + updatedSystemPrompt : updatedSystemPrompt;
           if (images?.length && hasVision) {
             const result = await callLLM(

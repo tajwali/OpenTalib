@@ -23,10 +23,13 @@ Generate a complete, self-contained HTML document that provides an interactive v
 
 ### JavaScript
 
-- Pure JavaScript only (no frameworks or external JS libraries except Tailwind)
-- All logic must strictly follow the scientific constraints provided
-- Interactive elements: drag, slider, click, animation as appropriate
-- Canvas API or SVG for visualizations when needed
+- Pure JavaScript only.
+- DO NOT use React, Vue, or any other framework.
+- DO NOT use React hooks like `useState`, `useEffect`, etc.
+- All logic must be in standard vanilla JavaScript.
+- All logic must strictly follow the scientific constraints provided.
+- Interactive elements: drag, slider, click, animation as appropriate.
+- Canvas API or SVG for visualizations when needed.
 
 ### Math Formulas
 

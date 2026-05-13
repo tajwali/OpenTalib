@@ -134,6 +134,8 @@ function HomePage() {
   const [userDisplayName, setUserDisplayName] = useState('');
   const [profileLoaded, setProfileLoaded] = useState(false);
 
+  const [isStarting, setIsStarting] = useState(false);
+
   // Hydrate client-only state after mount (avoids SSR mismatch)
   useEffect(() => {
     try {
@@ -1068,3 +1070,4 @@ function ClassroomCard({ classroom, slide, formatDate, onDelete, confirmingDelet
 }
 
 export default function Page() { return <HomePage />; }
+

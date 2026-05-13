@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { BotOff } from 'lucide-react';
 import type { InteractiveContent } from '@/lib/types/stage';
 
 interface InteractiveRendererProps {
@@ -14,6 +15,16 @@ export function InteractiveRenderer({ content, mode: _mode, sceneId }: Interacti
     () => (content.html ? patchHtmlForIframe(content.html) : undefined),
     [content.html],
   );
+
+  if (!patchedHtml && !content.url) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-muted-foreground bg-muted/5 rounded-xl border-2 border-dashed border-border/50">
+        <BotOff className="size-12 mb-4 opacity-20" />
+        <p className="text-sm font-medium">Interactive element unavailable for this scene.</p>
+        <p className="text-xs opacity-60 mt-1">Try refreshing or check the lesson outlines.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full h-full relative">
