@@ -28,11 +28,11 @@ export async function GET() {
         .select('id', { count: 'exact', head: true })
         .eq('user_id', user.id)
         .eq('completed', true),
-      admin.from('user_profiles').select('role').eq('id', user.id).single(),
+      admin.from('user_profiles').select('role, grade').eq('id', user.id).single(),
     ]);
 
     const totalCourses = coursesRes.count ?? 0;
-    const assignedCourses = assignedRes.count ?? 0;
+    let assignedCourses = assignedRes.count ?? 0;
     const coursesCompleted = progressRes.count ?? 0;
     const quizRows = quizRes.data ?? [];
     const quizzesTaken = quizRows.length;
@@ -44,6 +44,20 @@ export async function GET() {
         : null;
 
     const role = profileRes.data?.role;
+    const studentGrade = profileRes.data?.grade;
+
+    // Consistency check for school students: filter assigned count by grade to match dashboard list
+    if (role === 'school_student' && studentGrade) {
+      const { count } = await admin
+        .from('course_assignments')
+        .select('id, classrooms!inner(grade)', { count: 'exact', head: true })
+        .eq('assigned_to', user.id)
+        .or(`grade.eq."${studentGrade}",grade.is.null`, { foreignTable: 'classrooms' });
+      
+      if (count !== null) {
+        assignedCourses = count;
+      }
+    }
 
     // For teacher: count students
     let studentCount: number | undefined;

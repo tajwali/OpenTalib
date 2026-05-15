@@ -23,7 +23,7 @@ export async function GET() {
       .eq('id', user.id)
       .single();
 
-    const studentGrade = profile?.grade ? parseInt(String(profile.grade)) : null;
+    const studentGrade = profile?.grade ? String(profile.grade) : null;
 
     const query = admin
       .from('course_assignments')
@@ -49,11 +49,6 @@ export async function GET() {
       )
       .eq('assigned_to', user.id);
 
-    if (studentGrade) {
-      // If student has a grade, only show courses for that grade OR courses with no grade (null)
-      // Note: we filter in JS below for simpler join logic if nested filtering is tricky in PostgREST
-    }
-
     const { data, error } = await query.order('assigned_at', { ascending: false });
 
     if (error) {
@@ -65,13 +60,13 @@ export async function GET() {
       classroom_id: string;
       assigned_at: string;
       assigned_by: string;
-      classrooms: Array<{
+      classrooms: {
         id: string;
         title: string;
         short_title: string | null;
         topic: string;
         status: string;
-        grade: number | null;
+        grade: string | null;
         subject_id: string | null;
         subjects:
           | Array<{
@@ -80,18 +75,19 @@ export async function GET() {
             }>
           | { name: string; icon: string }
           | null;
-      }> | null;
+      } | null;
     }
 
     const result = (data as unknown as RawAssignmentRow[])
       .filter((row) => {
         if (!studentGrade) return true;
-        const classroom = Array.isArray(row.classrooms) ? row.classrooms[0] : row.classrooms;
+        const classroom = Array.isArray(row.classrooms) ? (row.classrooms as any)[0] : row.classrooms;
         const classroomGrade = classroom?.grade;
-        return !classroomGrade || classroomGrade === studentGrade;
+        // Compare as strings to avoid type mismatch between DB 'text' and JS 'number'
+        return !classroomGrade || String(classroomGrade) === studentGrade;
       })
       .map((row) => {
-        const classroom = Array.isArray(row.classrooms) ? row.classrooms[0] : row.classrooms;
+        const classroom = Array.isArray(row.classrooms) ? (row.classrooms as any)[0] : row.classrooms;
         const subjectsData = classroom?.subjects;
         const subject = Array.isArray(subjectsData) ? subjectsData[0] : subjectsData;
 
