@@ -161,6 +161,7 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedStudent, setSelectedStudent] = useState<StudentProgress | null>(null);
+  const [selectedStudentLoading, setSelectedStudentLoading] = useState(false);
   const [assignModal, setAssignModal] = useState<Course | null>(null);
   const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set());
   const [assigning, setAssigning] = useState(false);
@@ -228,12 +229,13 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
       const res = await fetch('/api/teacher/assign-course', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          classroom_id: assignment.classroom_id,
-          student_id: assignment.student_id,
-        }),
+        body: JSON.stringify({ assignmentId: assignment.id }),
       });
-      if (res.ok) setAssignments((prev) => prev.filter((a) => a.id !== assignment.id));
+      if (res.ok) {
+        setAssignments((prev) => prev.filter((a) => a.id !== assignment.id));
+      }
+    } catch (err) {
+      console.error('Failed to unassign course:', err);
     } finally {
       setUnassigningId(null);
     }
@@ -242,24 +244,76 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
   const deleteCourse = async (course: Course) => {
     setDeletingId(course.id);
     try {
-      const res = await fetch(`/api/user/classrooms?id=${course.id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/user/classrooms/${course.id}`, {
+        method: 'DELETE',
+      });
       if (res.ok) {
         setCourses((prev) => prev.filter((c) => c.id !== course.id));
         setDeleteConfirmCourse(null);
-        loadAll();
       }
+    } catch (err) {
+      console.error('Failed to delete course:', err);
     } finally {
       setDeletingId(null);
     }
   };
 
+  const handleDeleteStudent = async (studentId: string) => {
+    if (!confirm('Are you sure you want to remove this student? All their quiz results will be lost.'))
+      return;
+    try {
+      const res = await fetch(`/api/teacher/students?id=${studentId}`, { method: 'DELETE' });
+      if (res.ok) {
+        setStudents((prev) => prev.filter((s) => s.id !== studentId));
+      }
+    } catch {}
+  };
+
+  const handleSaveStudent = async () => {
+    if (!editingStudent) return;
+    setEditStudentSaving(true);
+    setEditStudentError(null);
+    try {
+      const res = await fetch(`/api/teacher/students?id=${editingStudent.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          display_name: editStudentName,
+          grade: editStudentGrade,
+          password: editStudentPassword || undefined,
+        }),
+      });
+      if (res.ok) {
+        setStudents((prev) =>
+          prev.map((s) =>
+            s.id === editingStudent.id
+              ? { ...s, display_name: editStudentName, grade: editStudentGrade }
+              : s,
+          ),
+        );
+        setEditingStudent(null);
+      } else {
+        const d = await res.json();
+        setEditStudentError(d.error || 'Failed to save student');
+      }
+    } catch {
+      setEditStudentError('Network error');
+    } finally {
+      setEditStudentSaving(false);
+    }
+  };
+
+  const openAssignModal = (course: Course) => {
+    setAssignModal(course);
+    setSelectedStudentIds(new Set());
+    setAssignResult(null);
+  };
+
   const toggleStudent = (id: string) => {
-    setSelectedStudentIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+    const next = new Set(selectedStudentIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedStudentIds(next);
   };
 
   const submitAssign = async () => {
@@ -277,14 +331,10 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
       });
       if (res.ok) {
         setAssignResult(`✓ Assigned to ${selectedStudentIds.size} students`);
-        setTimeout(() => {
-          setAssignModal(null);
-          setAssignResult(null);
-          setSelectedStudentIds(new Set());
-          loadAll();
-        }, 1500);
+        setTimeout(() => setAssignModal(null), 1500);
+        loadAll();
       } else {
-        setAssignResult('Failed to assign course');
+        setAssignResult('Error assigning course');
       }
     } catch {
       setAssignResult('Error assigning course');
@@ -301,15 +351,20 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
   };
 
   const showStudentProgress = async (studentId: string) => {
-    setLoading(true);
+    setSelectedStudentLoading(true);
     try {
-      const res = await fetch(`/api/teacher/student-progress?id=${studentId}`);
+      const res = await fetch(`/api/teacher/student-progress?student_id=${studentId}`);
       if (res.ok) {
         const data = await res.json();
         setSelectedStudent(data);
+      } else {
+        const d = await res.json().catch(() => ({}));
+        console.error('Failed to load student progress:', d.error || res.statusText);
       }
-    } catch {} finally {
-      setLoading(false);
+    } catch (err) {
+      console.error('Error fetching student progress:', err);
+    } finally {
+      setSelectedStudentLoading(false);
     }
   };
 
@@ -321,158 +376,163 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
     setEditStudentError(null);
   };
 
-  const handleSaveStudent = async () => {
-    if (!editingStudent) return;
-    if (editStudentName.trim().length < 2) {
-      setEditStudentError('Name too short');
-      return;
-    }
-    setEditStudentSaving(true);
-    try {
-      const res = await fetch(`/api/teacher/students`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: editingStudent.id,
-          display_name: editStudentName,
-          grade: editStudentGrade || null,
-          password: editStudentPassword || undefined,
-        }),
-      });
-      if (res.ok) {
-        setEditingStudent(null);
-        loadAll();
-      } else {
-        const err = await res.json();
-        setEditStudentError(err.error || 'Failed to save');
-      }
-    } catch {
-      setEditStudentError('Error saving changes');
-    } finally {
-      setEditStudentSaving(false);
-    }
-  };
-
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
+    router.push('/login');
     router.refresh();
+  };
+
+  const loadExamResults = useCallback(async () => {
+    setExamResultsLoading(true);
+    try {
+      const res = await fetch('/api/teacher/exam-results');
+      if (res.ok) {
+        const data = await res.json();
+        setExamResults(data);
+      }
+    } catch {
+    } finally {
+      setExamResultsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (tab === 'exam-results') {
+      loadExamResults();
+    }
+  }, [tab, loadExamResults]);
+
+  const toggleExamExpanded = (id: string) => {
+    const next = new Set(expandedExams);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setExpandedExams(next);
   };
 
   return (
     <div className="min-h-screen bg-background flex flex-col lg:flex-row">
       {/* ── Sidebar ── */}
-      <aside className="w-full lg:w-72 border-b lg:border-r border-border flex flex-col bg-card shrink-0">
-        <div className="p-6">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20">
-              <BookOpen className="w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="font-black text-xl tracking-tight text-foreground uppercase">
-                OpenTalib
-              </h1>
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                Teacher Panel
-              </p>
-            </div>
-          </div>
-
-          <nav className="space-y-1">
-            <NavItem
-              active={tab === 'students'}
-              onClick={() => setTab('students')}
-              icon={<Users className="w-4 h-4" />}
-              label="My Students"
-            />
-            <NavItem
-              active={tab === 'courses'}
-              onClick={() => setTab('courses')}
-              icon={<BookOpen className="w-4 h-4" />}
-              label="My Courses"
-            />
-            <NavItem
-              active={tab === 'assignments'}
-              onClick={() => setTab('assignments')}
-              icon={<ClipboardList className="w-4 h-4" />}
-              label="Assignments"
-            />
-            <NavItem
-              active={tab === 'exam-results'}
-              onClick={() => setTab('exam-results')}
-              icon={<FileText className="w-4 h-4" />}
-              label="Exam Results"
-            />
-            <NavItem
-              active={tab === 'analytics'}
-              onClick={() => setTab('analytics')}
-              icon={<BarChart2 className="w-4 h-4" />}
-              label="Analytics"
-            />
-            <NavItem
-              active={tab === 'settings'}
-              onClick={() => setTab('settings')}
-              icon={<Settings className="w-4 h-4" />}
-              label="Settings"
-            />
-          </nav>
+      <aside className="w-full lg:w-64 lg:fixed lg:inset-y-0 border-b lg:border-r border-border bg-card p-6 flex flex-col z-40">
+        <div className="mb-10">
+          <h1 className="text-2xl font-black text-foreground tracking-tighter">OpenTalib</h1>
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">
+            Teacher Portal
+          </p>
         </div>
 
-        <div className="mt-auto p-6 border-t border-border space-y-4">
-          <div className="bg-muted/40 rounded-xl p-4 border border-border/50">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">
-              Student Invite Code
-            </p>
-            <div className="flex items-center gap-2">
-              <code className="flex-1 bg-background border border-border px-2 py-1.5 rounded text-sm font-mono font-bold text-primary">
-                {inviteCode || '...'}
-              </code>
-              <button
-                onClick={handleCopy}
-                className="p-2 rounded-lg bg-background border border-border hover:bg-muted transition-colors"
-                title="Copy code"
-              >
-                {copied ? (
-                  <Check className="w-4 h-4 text-green-500" />
-                ) : (
-                  <Copy className="w-4 h-4 text-muted-foreground" />
-                )}
-              </button>
-            </div>
-          </div>
+        <nav className="flex-1 space-y-2">
+          <NavItem
+            active={tab === 'analytics'}
+            onClick={() => setTab('analytics')}
+            icon={<Activity className="w-4 h-4" />}
+            label="Insights"
+          />
+          <NavItem
+            active={tab === 'students'}
+            onClick={() => setTab('students')}
+            icon={<Users className="w-4 h-4" />}
+            label="My Students"
+          />
+          <NavItem
+            active={tab === 'courses'}
+            onClick={() => setTab('courses')}
+            icon={<BookOpen className="w-4 h-4" />}
+            label="My Courses"
+          />
+          <NavItem
+            active={tab === 'assignments'}
+            onClick={() => setTab('assignments')}
+            icon={<ClipboardList className="w-4 h-4" />}
+            label="Assignments"
+          />
+          <NavItem
+            active={tab === 'exam-results'}
+            onClick={() => setTab('exam-results')}
+            icon={<FileText className="w-4 h-4" />}
+            label="Mock Exams"
+          />
+        </nav>
 
-          <div className="flex items-center gap-3 px-2">
-            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground border border-border">
-              <UserCircle className="w-5 h-5" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-foreground truncate">
-                {displayName || userEmail || 'Teacher'}
-              </p>
-              <button
-                onClick={handleLogout}
-                className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest hover:text-destructive transition-colors flex items-center gap-1"
-              >
-                Sign Out <LogOut className="w-2.5 h-2.5" />
-              </button>
-            </div>
-          </div>
+        <div className="mt-auto pt-6 border-t border-border space-y-2">
+          <NavItem
+            active={tab === 'settings'}
+            onClick={() => setTab('settings')}
+            icon={<Settings className="w-4 h-4" />}
+            label="Settings"
+          />
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold uppercase tracking-widest text-destructive hover:bg-destructive/10 transition-all"
+          >
+            <LogOut className="w-4 h-4" />
+            Logout
+          </button>
         </div>
       </aside>
 
-      {/* ── Main Content ── */}
-      <main className="flex-1 p-6 lg:p-10 overflow-y-auto">
+      {/* ── Main Content Area ── */}
+      <main className="flex-1 lg:ml-64 p-4 lg:p-8">
+        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10">
+          <div>
+            <h2 className="text-3xl font-black text-foreground tracking-tight uppercase">
+              {tab === 'analytics'
+                ? 'Insights'
+                : tab === 'students'
+                  ? 'Students'
+                  : tab === 'courses'
+                    ? 'Courses'
+                    : tab === 'assignments'
+                      ? 'Assignments'
+                      : tab === 'exam-results'
+                        ? 'Exam Results'
+                        : 'Settings'}
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              {displayName ?? userEmail ?? 'Welcome back, Teacher'}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.push('/generate')}
+              className="bg-primary text-primary-foreground px-6 py-2.5 rounded-xl font-bold text-sm uppercase tracking-widest shadow-lg shadow-primary/20 hover:opacity-90 transition-all active:scale-95"
+            >
+              + Create Course
+            </button>
+          </div>
+        </header>
+
         {/* ── Tab: Students ── */}
         {tab === 'students' && (
-          <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <h2 className="text-2xl font-black tracking-tight text-foreground uppercase">
-                My Students
-              </h2>
+          <section className="space-y-6">
+            <div className="bg-primary/5 border border-primary/10 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                  <Copy className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-foreground">Invite Students</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Students can join your class using this unique code.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <div className="flex-1 sm:flex-none px-6 py-3 bg-background border border-border rounded-xl font-mono font-bold text-primary tracking-widest text-center">
+                  {inviteCode || '••••••'}
+                </div>
+                <button
+                  onClick={handleCopy}
+                  className="p-3 bg-primary text-primary-foreground rounded-xl shadow-lg shadow-primary/10 hover:opacity-90 transition-all"
+                >
+                  {copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
+                </button>
+              </div>
             </div>
 
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[1, 2, 3].map((i) => (
+                {[1, 2, 3, 4, 5, 6].map((i) => (
                   <div key={i} className="h-40 rounded-2xl bg-muted animate-pulse" />
                 ))}
               </div>
@@ -510,392 +570,375 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            router.push(`/profile/student?userId=${s.id}`);
+                            handleEditStudent(s);
                           }}
-                          className="p-1.5 rounded-lg hover:bg-muted text-violet-600"
-                          title="Edit learning profile"
+                          className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-primary transition-colors"
+                          title="Edit student"
                         >
-                          <Activity className="w-3.5 h-3.5" />
+                          <Pencil className="w-4 h-4" />
                         </button>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleEditStudent(s);
+                            handleDeleteStudent(s.id);
                           }}
-                          className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground"
+                          className="p-1.5 rounded-lg text-muted-foreground hover:bg-muted hover:text-destructive transition-colors"
+                          title="Remove student"
                         >
-                          <Pencil className="w-3.5 h-3.5" />
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 mt-auto">
-                      <div className="bg-muted/30 rounded-xl p-2.5 text-center">
-                        <p className="text-lg font-black text-foreground">
-                          {s.coursesAssigned}
-                        </p>
-                        <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest">
+                    <div className="mt-auto pt-4 border-t border-border flex items-center justify-between">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
                           Assigned
-                        </p>
+                        </span>
+                        <span className="text-sm font-bold text-foreground">
+                          {s.coursesAssigned} courses
+                        </span>
                       </div>
-                      <div className="bg-muted/30 rounded-xl p-2.5 text-center">
-                        <p className="text-lg font-black text-foreground">
-                          {s.lastQuizScore !== null ? `${s.lastQuizScore}%` : '—'}
-                        </p>
-                        <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest">
-                          Last Quiz
-                        </p>
+                      <div className="flex flex-col items-end">
+                        <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
+                          Avg. Score
+                        </span>
+                        {s.lastQuizScore !== null ? (
+                          <ScoreBadge pct={s.lastQuizScore} />
+                        ) : (
+                          <span className="text-sm font-bold text-muted-foreground">—</span>
+                        )}
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
             )}
-          </div>
+            {selectedStudentLoading && (
+              <div className="fixed bottom-6 right-6 bg-primary text-primary-foreground px-4 py-2 rounded-full shadow-xl flex items-center gap-2 animate-bounce z-50">
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                <span className="text-xs font-bold uppercase tracking-widest">Loading Profile...</span>
+              </div>
+            )}
+          </section>
         )}
 
         {/* ── Tab: Courses ── */}
         {tab === 'courses' && (
-          <div className="space-y-6">
+          <section className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <h2 className="text-2xl font-black tracking-tight text-foreground uppercase">
-                My Courses
-              </h2>
-              <div className="flex flex-wrap gap-2">
+              <h3 className="font-bold text-foreground">My Classroom Library</h3>
+              <div className="flex items-center gap-4">
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                  Filter:
+                </span>
                 <select
-                  className="px-3 py-1.5 rounded-lg border border-border bg-card text-xs font-bold uppercase tracking-wider text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                   value={selectedSubjectId}
                   onChange={(e) => setSelectedSubjectId(e.target.value)}
+                  className="bg-card border border-border rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
                 >
                   <option value="all">All Subjects</option>
-                  {subjects.map((sub) => (
-                    <option key={sub.id} value={sub.id}>
-                      {sub.name}
+                  {subjects.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.icon} {s.name}
                     </option>
                   ))}
                 </select>
-                <button
-                  onClick={() => router.push('/generate')}
-                  className="px-4 py-2 bg-primary text-primary-foreground rounded-xl text-xs font-bold uppercase tracking-widest hover:opacity-90 transition-opacity shadow-lg shadow-primary/20 flex items-center gap-2"
-                >
-                  <RefreshCw className="w-3 h-3" /> Create New
-                </button>
               </div>
             </div>
 
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-48 rounded-2xl bg-muted animate-pulse" />
+                  <div key={i} className="h-64 rounded-2xl bg-muted animate-pulse" />
                 ))}
               </div>
             ) : courses.length === 0 ? (
               <div className="text-center py-24 border-2 border-dashed border-border rounded-2xl bg-muted/20">
                 <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-20" />
-                <p className="text-muted-foreground font-medium">No courses found</p>
+                <p className="text-muted-foreground font-medium">No courses created yet</p>
                 <button
                   onClick={() => router.push('/generate')}
-                  className="mt-4 text-sm font-bold text-primary hover:underline"
+                  className="mt-4 text-primary font-bold text-sm uppercase tracking-widest"
                 >
-                  Create your first course →
+                  Start generating →
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {courses
                   .filter((c) => selectedSubjectId === 'all' || c.subject_id === selectedSubjectId)
                   .map((c) => (
                     <div
                       key={c.id}
-                      className="group bg-card border border-border rounded-2xl p-5 hover:border-primary/50 transition-all hover:shadow-lg hover:shadow-primary/5 flex flex-col"
+                      className="group bg-card border border-border rounded-2xl p-6 flex flex-col hover:border-primary/50 transition-all hover:shadow-xl hover:shadow-primary/5"
                     >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-xl group-hover:bg-primary/10 transition-colors">
+                      <div className="flex justify-between items-start mb-6">
+                        <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center text-2xl group-hover:bg-primary/10 transition-colors">
                           {c.subject_icon || '📚'}
                         </div>
                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={() => setDeleteConfirmCourse(c)}
-                            className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                            className="p-2 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
                             title="Delete course"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </div>
-                      <h3 className="font-bold text-foreground mb-1 leading-tight line-clamp-2 min-h-[2.5rem]">
+
+                      <h4
+                        className="font-bold text-foreground text-lg mb-1 group-hover:text-primary transition-colors cursor-pointer line-clamp-2"
+                        onClick={() => router.push(`/classroom/${c.id}`)}
+                      >
                         {c.title}
-                      </h3>
-                      <div className="flex items-center gap-2 mb-4">
-                        <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest bg-muted/50 px-2 py-0.5 rounded">
-                          {c.grade ? `Grade ${c.grade}` : 'General'}
-                        </span>
-                        <span className="text-[10px] font-black text-primary uppercase tracking-widest">
-                          {c.subject_name || 'Uncategorized'}
-                        </span>
+                      </h4>
+                      <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest mb-6">
+                        {c.subject_name || c.topic}
+                      </p>
+
+                      <div className="space-y-4 mb-6">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground font-bold uppercase tracking-tighter">
+                            Subject
+                          </span>
+                          <select
+                            value={c.subject_id || 'none'}
+                            onChange={(e) => updateCourseSubject(c.id, e.target.value)}
+                            className="bg-muted/50 border-none rounded-lg px-2 py-1 text-[11px] font-bold focus:ring-0"
+                          >
+                            <option value="none">None</option>
+                            {subjects.map((s) => (
+                              <option key={s.id} value={s.id}>
+                                {s.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground font-bold uppercase tracking-tighter">
+                            Target Grade
+                          </span>
+                          <span className="font-bold text-foreground">
+                            {c.grade ? `Grade ${c.grade}` : 'General'}
+                          </span>
+                        </div>
                       </div>
 
-                      <div className="mt-auto pt-4 border-t border-border/50 flex items-center justify-between">
-                        <button
-                          onClick={() => router.push(`/classroom/${c.id}`)}
-                          className="text-xs font-bold text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5"
-                        >
-                          View <ChevronRight className="w-3 h-3" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setAssignModal(c);
-                            setSelectedStudentIds(new Set());
-                          }}
-                          className="px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-primary-foreground transition-all"
-                        >
-                          Assign Students
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => openAssignModal(c)}
+                        className="mt-auto w-full py-3 bg-muted text-foreground rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-primary hover:text-primary-foreground transition-all flex items-center justify-center gap-2"
+                      >
+                        <ClipboardList className="w-4 h-4" />
+                        Assign Course
+                      </button>
                     </div>
                   ))}
               </div>
             )}
-          </div>
+          </section>
         )}
 
         {/* ── Tab: Assignments ── */}
         {tab === 'assignments' && (
-          <div>
-            <h2 className="text-lg font-semibold mb-4">Course Assignments</h2>
-            {loading ? (
-              <div className="space-y-2">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-12 rounded-lg bg-muted animate-pulse" />
-                ))}
-              </div>
-            ) : assignments.length === 0 ? (
-              <div className="text-center py-16 border-2 border-dashed border-border rounded-xl">
-                <ClipboardList className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-                <p className="text-muted-foreground font-medium">
-                  No assignments yet — assign courses from the My Courses tab
-                </p>
-              </div>
-            ) : (
-              <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <section className="space-y-6">
+            <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+              <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-border bg-muted/50">
-                      <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">
-                        Course
-                      </th>
-                      <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">
-                        Student
-                      </th>
-                      <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">
-                        Assigned
-                      </th>
-                      <th className="px-4 py-2.5" />
+                    <tr className="bg-muted/30 border-b border-border text-[10px] uppercase tracking-widest text-muted-foreground">
+                      <th className="text-left px-6 py-4 font-bold">Course Name</th>
+                      <th className="text-left px-6 py-4 font-bold">Student Name</th>
+                      <th className="text-left px-6 py-4 font-bold">Assigned Date</th>
+                      <th className="text-right px-6 py-4 font-bold">Actions</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-border">
                     {assignments.map((a) => (
-                      <tr
-                        key={a.id}
-                        className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
-                      >
-                        <td className="px-4 py-3 text-foreground truncate max-w-[200px]">
-                          <div className="flex items-center gap-2">
-                            <span className="truncate">{a.classroom_title}</span>
-                            <span
-                              className="shrink-0 px-1 py-0.5 rounded bg-muted text-[10px] text-muted-foreground font-mono hover:bg-muted/80 transition-colors cursor-pointer"
-                              title="Click to copy full ID"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigator.clipboard.writeText(a.classroom_id);
-                              }}
-                            >
-                              #{a.classroom_id.slice(-6)}
-                            </span>
-                          </div>
+                      <tr key={a.id} className="hover:bg-muted/5 transition-colors">
+                        <td className="px-6 py-4 font-bold text-foreground">{a.classroom_title}</td>
+                        <td className="px-6 py-4 font-medium text-muted-foreground">
+                          {a.student_name}
                         </td>
-                        <td className="px-4 py-3 text-muted-foreground">{a.student_name}</td>
-                        <td className="px-4 py-3 text-xs text-muted-foreground">
+                        <td className="px-6 py-4 text-xs text-muted-foreground">
                           {new Date(a.assigned_at).toLocaleDateString(undefined, {
+                            year: 'numeric',
                             month: 'short',
                             day: 'numeric',
                           })}
                         </td>
-                        <td className="px-4 py-3 text-right">
+                        <td className="px-6 py-4 text-right">
                           <button
                             onClick={() => unassignCourse(a)}
                             disabled={unassigningId === a.id}
-                            className="px-3 py-1 rounded-md text-xs font-medium text-destructive border border-destructive/40 hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                            className="text-xs font-bold uppercase tracking-widest text-destructive hover:underline disabled:opacity-50"
                           >
                             {unassigningId === a.id ? 'Removing…' : 'Unassign'}
                           </button>
                         </td>
                       </tr>
                     ))}
+                    {assignments.length === 0 && (
+                      <tr>
+                        <td
+                          colSpan={4}
+                          className="px-6 py-12 text-center text-muted-foreground italic"
+                        >
+                          No active assignments
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
-            )}
-          </div>
+            </div>
+          </section>
         )}
+
         {/* ── Tab: Exam Results ── */}
         {tab === 'exam-results' && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold">Exam Results</h2>
+          <section className="space-y-6">
             {examResultsLoading ? (
-              <div className="space-y-2">
-                {[1, 2].map((i) => (
-                  <div key={i} className="h-16 rounded-xl bg-muted animate-pulse" />
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-16 rounded-2xl bg-muted animate-pulse" />
                 ))}
               </div>
             ) : examResults.length === 0 ? (
-              <div className="text-center py-16 border-2 border-dashed border-border rounded-xl">
-                <BarChart2 className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
-                <p className="text-muted-foreground font-medium">No exams created yet</p>
+              <div className="text-center py-24 border-2 border-dashed border-border rounded-2xl bg-muted/20">
+                <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-20" />
+                <p className="text-muted-foreground font-medium">No exam results found</p>
               </div>
             ) : (
-              <div className="space-y-3">
-                {examResults.map((exam) => {
-                  const isExpanded = expandedExams.has(exam.exam_id);
-                  const completed = exam.results.length;
-                  return (
+              <div className="space-y-4">
+                {examResults.map((exam) => (
+                  <div
+                    key={exam.exam_id}
+                    className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm"
+                  >
                     <div
-                      key={exam.exam_id}
-                      className="bg-card border border-border rounded-xl overflow-hidden"
+                      className="px-6 py-4 flex items-center justify-between cursor-pointer hover:bg-muted/5 transition-colors"
+                      onClick={() => toggleExamExpanded(exam.exam_id)}
                     >
-                      <button
-                        onClick={() =>
-                          setExpandedExams((prev) => {
-                            const next = new Set(prev);
-                            if (next.has(exam.exam_id)) next.delete(exam.exam_id);
-                            else next.add(exam.exam_id);
-                            return next;
-                          })
-                        }
-                        className="w-full flex items-center justify-between px-5 py-4 hover:bg-muted/30 transition-colors"
-                      >
-                        <div className="text-left">
-                          <p className="font-medium text-foreground">{exam.exam_title}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {completed} student{completed !== 1 ? 's' : ''} completed
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                          <FileText className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-foreground">{exam.exam_title}</h4>
+                          <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest">
+                            {exam.results.length} submissions
                           </p>
                         </div>
-                        <ChevronDown
-                          className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                        />
-                      </button>
-                      {isExpanded && (
-                        <div className="border-t border-border">
-                          {exam.results.length === 0 ? (
-                            <p className="px-5 py-4 text-sm text-muted-foreground">
-                              No students have completed this exam yet.
-                            </p>
-                          ) : (
-                            <table className="w-full text-sm">
-                              <thead>
-                                <tr className="border-b border-border bg-muted/30">
-                                  <th className="text-left px-5 py-2.5 font-medium text-muted-foreground">
-                                    Student
-                                  </th>
-                                  <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">
-                                    Score
-                                  </th>
-                                  <th className="text-center px-4 py-2.5 font-medium text-muted-foreground">
-                                    Result
-                                  </th>
-                                  <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">
-                                    Date
-                                  </th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {exam.results.map((r, i) => (
-                                  <tr
-                                    key={i}
-                                    className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors"
-                                  >
-                                    <td className="px-5 py-3 font-medium text-foreground">
-                                      {r.student_name}
-                                    </td>
-                                    <td className="px-4 py-3 text-center text-muted-foreground">
-                                      {r.score}/{r.total_questions}
-                                    </td>
-                                    <td className="px-4 py-3 text-center">
-                                      <ScoreBadge pct={r.percentage} />
-                                    </td>
-                                    <td className="px-4 py-3 text-right text-xs text-muted-foreground">
-                                      {r.completed_at
-                                        ? new Date(r.completed_at).toLocaleDateString(undefined, {
-                                            month: 'short',
-                                            day: 'numeric',
-                                          })
-                                        : '—'}
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          )}
-                        </div>
-                      )}
+                      </div>
+                      <ChevronDown
+                        className={`w-5 h-5 text-muted-foreground transition-transform ${expandedExams.has(exam.exam_id) ? 'rotate-180' : ''}`}
+                      />
                     </div>
-                  );
-                })}
+
+                    {expandedExams.has(exam.exam_id) && (
+                      <div className="border-t border-border">
+                        <table className="w-full text-sm">
+                          <thead className="bg-muted/30 text-[10px] uppercase tracking-widest text-muted-foreground">
+                            <tr>
+                              <th className="text-left px-6 py-3 font-medium">Student</th>
+                              <th className="text-center px-6 py-3 font-medium">Score</th>
+                              <th className="text-center px-6 py-3 font-medium">Percentage</th>
+                              <th className="text-right px-6 py-3 font-medium">Date</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-border">
+                            {exam.results.map((r, i) => (
+                              <tr key={i} className="hover:bg-muted/5 transition-colors">
+                                <td className="px-6 py-4 font-medium text-foreground">
+                                  {r.student_name}
+                                </td>
+                                <td className="px-6 py-4 text-center font-mono">
+                                  {r.score}/{r.total_questions}
+                                </td>
+                                <td className="px-6 py-4 text-center">
+                                  <ScoreBadge pct={r.percentage} />
+                                </td>
+                                <td className="px-6 py-4 text-right text-xs text-muted-foreground">
+                                  {r.completed_at
+                                    ? new Date(r.completed_at).toLocaleDateString()
+                                    : '—'}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
-          </div>
+          </section>
         )}
 
         {/* ── Tab: Analytics ── */}
         {tab === 'analytics' && (
-          <div className="space-y-6">
-            <h2 className="text-lg font-semibold">Student Analytics</h2>
-
-            {loading || !teacherStats ? (
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="h-24 rounded-xl bg-muted animate-pulse" />
-                  ))}
-                </div>
-                <div className="h-64 rounded-xl bg-muted animate-pulse" />
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {!teacherStats ? (
+              <div className="flex flex-col items-center justify-center py-32 text-muted-foreground">
+                <RefreshCw className="w-10 h-10 animate-spin mb-4 opacity-20" />
+                <p className="font-medium">Collecting your class insights...</p>
               </div>
             ) : (
               <>
-                {/* Summary Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="bg-card border border-border rounded-xl p-5 shadow-sm">
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
-                      Total Students
-                    </p>
-                    <p className="text-3xl font-black text-foreground">
-                      {teacherStats.totalStudents}
-                    </p>
+                {/* Stats Cards */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-card border border-border rounded-2xl p-5 shadow-sm hover:border-primary/30 transition-colors">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2 rounded-lg bg-blue-500/10 text-blue-500">
+                        <Users className="w-4 h-4" />
+                      </div>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                        Students
+                      </span>
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl font-black">{teacherStats.totalStudents}</span>
+                    </div>
                   </div>
-                  <div className="bg-card border border-border rounded-xl p-5 shadow-sm">
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
-                      Total Courses
-                    </p>
-                    <p className="text-3xl font-black text-foreground">
-                      {teacherStats.totalCourses}
-                    </p>
+                  <div className="bg-card border border-border rounded-2xl p-5 shadow-sm hover:border-primary/30 transition-colors">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2 rounded-lg bg-purple-500/10 text-purple-500">
+                        <BookOpen className="w-4 h-4" />
+                      </div>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                        Courses
+                      </span>
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl font-black">{teacherStats.totalCourses}</span>
+                    </div>
                   </div>
-                  <div className="bg-card border border-border rounded-xl p-5 shadow-sm">
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
-                      Assignments
-                    </p>
-                    <p className="text-3xl font-black text-foreground">
-                      {teacherStats.totalAssignments}
-                    </p>
+                  <div className="bg-card border border-border rounded-2xl p-5 shadow-sm hover:border-primary/30 transition-colors">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2 rounded-lg bg-orange-500/10 text-orange-500">
+                        <ClipboardList className="w-4 h-4" />
+                      </div>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                        Assigned
+                      </span>
+                    </div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl font-black">{teacherStats.totalAssignments}</span>
+                    </div>
                   </div>
-                  <div className="bg-card border border-border rounded-xl p-5 shadow-sm">
-                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1">
-                      Avg Quiz Score
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <p className="text-3xl font-black text-foreground">
-                        {teacherStats.avgQuizScore}%
-                      </p>
+                  <div className="bg-card border border-border rounded-2xl p-5 shadow-sm hover:border-primary/30 transition-colors">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2 rounded-lg bg-green-500/10 text-green-500">
+                        <BarChart2 className="w-4 h-4" />
+                      </div>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                        Avg Score
+                      </span>
+                    </div>
+                    <div className="flex items-baseline gap-2">
                       <ScoreBadge pct={teacherStats.avgQuizScore} />
                     </div>
                   </div>
@@ -1456,7 +1499,7 @@ function TeacherSettingsPanel() {
 
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Default Playback Speed</Label>
-                <Select value={playbackSpeed.toString()} onValueChange={(v) => setPlaybackSpeed(parseFloat(v) as any)}>
+                <Select value={(playbackSpeed ?? 1).toString()} onValueChange={(v) => setPlaybackSpeed(parseFloat(v) as any)}>
                   <SelectTrigger className="rounded-xl border-border bg-muted/30">
                     <SelectValue />
                   </SelectTrigger>

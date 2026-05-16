@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const studentId = request.nextUrl.searchParams.get('student_id');
+    const studentId = request.nextUrl.searchParams.get('student_id') || request.nextUrl.searchParams.get('id');
     if (!studentId) return NextResponse.json({ error: 'Missing student_id' }, { status: 400 });
 
     // Verify student belongs to this teacher
