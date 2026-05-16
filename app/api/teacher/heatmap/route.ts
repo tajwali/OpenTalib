@@ -4,8 +4,7 @@ import { getSupabaseAdmin } from '@/lib/server/supabase-admin'
 
 export async function GET(request: NextRequest) {
   const auth = await requireRole(['teacher', 'admin'])
-  if (auth instanceof NextResponse) return auth
-  if (!auth.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if ('error' in auth) return auth.error;
   const { user } = auth
 
   const admin = getSupabaseAdmin()
@@ -17,7 +16,7 @@ export async function GET(request: NextRequest) {
     .eq('role', 'school_student')
 
   if (!students || students.length === 0) {
-    return NextResponse.json({ students: [], heatmap: [], atRisk: [] })
+    return NextResponse.json({ students: [], heatmap: {}, atRisk: [] })
   }
 
   const studentIds = students.map(s => s.id)

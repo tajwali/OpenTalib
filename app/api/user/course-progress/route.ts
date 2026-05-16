@@ -41,6 +41,25 @@ export async function POST(request: Request) {
 
     const admin = getSupabaseAdmin();
 
+    // Verify user is assigned to this course
+    const { data: assignment } = await admin
+      .from('course_assignments')
+      .select('id')
+      .eq('classroom_id', classroom_id)
+      .eq('assigned_to', user.id)
+      .single();
+
+    const { data: ownership } = await admin
+      .from('classrooms')
+      .select('id')
+      .eq('id', classroom_id)
+      .eq('user_id', user.id)
+      .single();
+
+    if (!assignment && !ownership) {
+      return NextResponse.json({ error: 'Forbidden: Not assigned to this course' }, { status: 403 });
+    }
+
     // 1. Update last_accessed
     await admin
       .from('course_progress')
@@ -86,6 +105,25 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Missing classroom_id' }, { status: 400 });
 
     const admin = getSupabaseAdmin();
+
+    // Verify user is assigned to this course
+    const { data: assignment } = await admin
+      .from('course_assignments')
+      .select('id')
+      .eq('classroom_id', body.classroom_id)
+      .eq('assigned_to', user.id)
+      .single();
+
+    const { data: ownership } = await admin
+      .from('classrooms')
+      .select('id')
+      .eq('id', body.classroom_id)
+      .eq('user_id', user.id)
+      .single();
+
+    if (!assignment && !ownership) {
+      return NextResponse.json({ error: 'Forbidden: Not assigned to this course' }, { status: 403 });
+    }
 
     // Fetch current progress to update scenes_completed array
     const { data: current } = await admin

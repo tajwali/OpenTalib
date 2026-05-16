@@ -204,7 +204,9 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
         setTeacherStats(stats as TeacherStats | null);
         setHeatmapData(heat as HeatmapData | null);
       })
-      .catch(() => {})
+      .catch((err) => {
+        log.error('Failed to load dashboard data:', err);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -220,7 +222,9 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
         body: JSON.stringify({ subjectId: subjectId === 'none' ? null : subjectId }),
       });
       if (res.ok) loadAll();
-    } catch {}
+    } catch (err) {
+      log.error('Failed to update course subject:', err);
+    }
   };
 
   const unassignCourse = async (assignment: Assignment) => {
@@ -235,7 +239,7 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
         setAssignments((prev) => prev.filter((a) => a.id !== assignment.id));
       }
     } catch (err) {
-      console.error('Failed to unassign course:', err);
+      log.error('Failed to unassign course:', err);
     } finally {
       setUnassigningId(null);
     }
@@ -252,7 +256,7 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
         setDeleteConfirmCourse(null);
       }
     } catch (err) {
-      console.error('Failed to delete course:', err);
+      log.error('Failed to delete course:', err);
     } finally {
       setDeletingId(null);
     }
@@ -266,7 +270,9 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
       if (res.ok) {
         setStudents((prev) => prev.filter((s) => s.id !== studentId));
       }
-    } catch {}
+    } catch (err) {
+      log.error('Failed to delete student:', err);
+    }
   };
 
   const handleSaveStudent = async () => {
@@ -296,7 +302,8 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
         const d = await res.json();
         setEditStudentError(d.error || 'Failed to save student');
       }
-    } catch {
+    } catch (err) {
+      log.error('Failed to save student profile:', err);
       setEditStudentError('Network error');
     } finally {
       setEditStudentSaving(false);
@@ -336,7 +343,8 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
       } else {
         setAssignResult('Error assigning course');
       }
-    } catch {
+    } catch (err) {
+      log.error('Failed to assign course:', err);
       setAssignResult('Error assigning course');
     } finally {
       setAssigning(false);
@@ -359,10 +367,10 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
         setSelectedStudent(data);
       } else {
         const d = await res.json().catch(() => ({}));
-        console.error('Failed to load student progress:', d.error || res.statusText);
+        log.error('Failed to load student progress:', d.error || res.statusText);
       }
     } catch (err) {
-      console.error('Error fetching student progress:', err);
+      log.error('Error fetching student progress:', err);
     } finally {
       setSelectedStudentLoading(false);
     }
@@ -390,7 +398,8 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
         const data = await res.json();
         setExamResults(data);
       }
-    } catch {
+    } catch (err) {
+      log.error('Failed to load exam results:', err);
     } finally {
       setExamResultsLoading(false);
     }

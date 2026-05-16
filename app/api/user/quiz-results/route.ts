@@ -31,9 +31,29 @@ export async function POST(request: Request) {
       );
     }
 
+    const admin = getSupabaseAdmin();
+
+    // Verify user is assigned to this course
+    const { data: assignment } = await admin
+      .from('course_assignments')
+      .select('id')
+      .eq('classroom_id', classroom_id)
+      .eq('assigned_to', user.id)
+      .single();
+
+    const { data: ownership } = await admin
+      .from('classrooms')
+      .select('id')
+      .eq('id', classroom_id)
+      .eq('user_id', user.id)
+      .single();
+
+    if (!assignment && !ownership) {
+      return NextResponse.json({ error: 'Forbidden: Not assigned to this course' }, { status: 403 });
+    }
+
     const percentage = total > 0 ? Math.round((score / total) * 10000) / 100 : 0;
 
-    const admin = getSupabaseAdmin();
     const { data, error } = await admin
       .from('quiz_results')
       .insert({

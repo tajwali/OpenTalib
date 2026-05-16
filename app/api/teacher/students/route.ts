@@ -170,3 +170,52 @@ export async function PATCH(req: NextRequest) {
     );
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const auth = await requireRole(['teacher', 'admin']);
+    if ('error' in auth) return auth.error;
+
+    const { searchParams } = new URL(req.url);
+    const studentId = searchParams.get('id');
+
+    if (!studentId) {
+      return NextResponse.json({ error: 'id is required' }, { status: 400 });
+    }
+
+    const admin = getSupabaseAdmin();
+
+    // Verify this student belongs to the requesting teacher (unless admin)
+    if (auth.role !== 'admin') {
+      const { data: profile } = await admin
+        .from('user_profiles')
+        .select('teacher_id')
+        .eq('id', studentId)
+        .single();
+
+      if (!profile || profile.teacher_id !== auth.user.id) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+    }
+
+    // Delete from auth.users (cascades to user_profiles and course_assignments)
+    const res = await gotrueAdmin(`/users/${studentId}`, {
+      method: 'DELETE',
+    });
+
+    if (!res.ok) {
+      const errBody = (await res.json().catch(() => ({}))) as { msg?: string };
+      return NextResponse.json(
+        { error: errBody.msg ?? 'Failed to delete student' },
+        { status: 500 },
+      );
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'Internal error' },
+      { status: 500 },
+    );
+  }
+}

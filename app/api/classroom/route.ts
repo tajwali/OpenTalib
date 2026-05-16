@@ -12,9 +12,13 @@ import {
   writeJsonFileAtomic,
 } from '@/lib/server/classroom-storage';
 import { getSupabaseAdmin } from '@/lib/server/supabase-admin';
+import { requireAuth } from '@/lib/server/require-role';
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireAuth();
+    if ('error' in auth) return auth.error;
+
     const body = await request.json();
     const { stage, scenes, outlines } = body;
 
@@ -61,9 +65,33 @@ export async function GET(request: NextRequest) {
       return apiError(API_ERROR_CODES.INVALID_REQUEST, 400, 'Invalid classroom id');
     }
 
-    // No auth check — classroom IDs are 10-char nanoid strings (~10^18 combinations)
-    // and cannot be enumerated. Content is educational material, not PII.
-    // Cookie-based auth checks were unreliable through the Cloudflare tunnel.
+    // Auth check — verify user has access to this classroom
+    const auth = await requireAuth();
+    if ('error' in auth) return auth.error;
+
+    const admin = getSupabaseAdmin();
+
+    // Teachers/Admins can see everything they created
+    // Students can only see what was assigned to them
+    if (auth.role === 'school_student' || auth.role === 'mature_student') {
+      const { data: assignment } = await admin
+        .from('course_assignments')
+        .select('id')
+        .eq('classroom_id', id)
+        .eq('assigned_to', auth.user.id)
+        .single();
+      
+      const { data: ownership } = await admin
+        .from('classrooms')
+        .select('id')
+        .eq('id', id)
+        .eq('user_id', auth.user.id)
+        .single();
+
+      if (!assignment && !ownership) {
+        return apiError(API_ERROR_CODES.UNAUTHORIZED, 403, 'You are not assigned to this course');
+      }
+    }
 
     // 1. Try local file first (fast path)
     const classroom = await readClassroom(id);
@@ -72,7 +100,6 @@ export async function GET(request: NextRequest) {
     }
 
     // 2. File not found — fall back to Supabase DB
-    const admin = getSupabaseAdmin();
     const { data: row, error: dbError } = await admin
       .from('classrooms')
       .select('id, title, short_title, created_at, scenes, outline')
@@ -83,14 +110,11 @@ export async function GET(request: NextRequest) {
       return apiError(API_ERROR_CODES.INVALID_REQUEST, 404, 'Classroom not found');
     }
 
-    // Fixed: Ensure we correctly check the length of scenes, which is a JSONB array
     const scenes = row.scenes;
     if (!scenes || (Array.isArray(scenes) && scenes.length === 0)) {
       return apiError(API_ERROR_CODES.INVALID_REQUEST, 404, 'Course has no content');
     }
 
-    // Reconstruct the shape readClassroom() returns so the client gets
-    // the same response format whether data came from file or DB.
     const dbClassroom = {
       id: row.id as string,
       stage: {
@@ -107,7 +131,7 @@ export async function GET(request: NextRequest) {
       createdAt: row.created_at as string,
     };
 
-    // 3. Cache to local file so future requests hit the fast path
+    // 3. Cache to local file
     try {
       await fs.mkdir(CLASSROOMS_DIR, { recursive: true });
       const filePath = path.join(CLASSROOMS_DIR, `${id}.json`);
