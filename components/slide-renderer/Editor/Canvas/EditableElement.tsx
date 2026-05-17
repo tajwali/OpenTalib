@@ -248,13 +248,13 @@ export function EditableElement({
         <ContextMenuContent>
           {contextmenus().map((item, index) => {
             if (item.divider) {
-              return <ContextMenuSeparator key={index} />;
+              return <ContextMenuSeparator key={index} /* TODO: replace with unique id */ />;
             }
 
             // If has children, use submenu component
             if (item.children && item.children.length > 0) {
               return (
-                <ContextMenuSub key={index}>
+                <ContextMenuSub key={index} /* TODO: replace with unique id */>
                   <ContextMenuSubTrigger disabled={item.disable} hidden={item.hide}>
                     {item.text}
                     {item.subText && <ContextMenuShortcut>{item.subText}</ContextMenuShortcut>}
@@ -288,7 +288,7 @@ export function EditableElement({
             // Regular menu item
             return (
               <ContextMenuItem
-                key={index}
+                key={index} /* TODO: replace with unique id */
                 onClick={(e) => {
                   e.stopPropagation();
                   item.handler?.();

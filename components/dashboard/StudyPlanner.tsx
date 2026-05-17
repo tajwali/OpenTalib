@@ -157,7 +157,7 @@ export function StudyPlanner() {
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {week.sessions.map((s, i) => (
-                    <span key={i}
+                    <span key={i} /* TODO: replace with unique id */ /* TODO: replace with unique id */
                       className={`text-[10px] border rounded px-2 py-0.5 font-medium ${typeColor(s.type)}`}>
                       {s.day}: {s.topic} ({s.duration_minutes}m)
                     </span>

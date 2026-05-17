@@ -138,7 +138,7 @@ export function LessonTutor({
             )}
             {messages.map((m, i) => (
               <div
-                key={i}
+                key={i} /* TODO: replace with unique id */
                 className={`text-sm rounded-lg px-3 py-2 max-w-[90%] ${
                   m.role === 'user'
                     ? 'ml-auto bg-primary text-primary-foreground'

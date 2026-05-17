@@ -111,7 +111,7 @@ const VOICE_WAVE_BARS = [
 function VoiceWaveformBars({ barClassName }: { readonly barClassName: string }) {
   return VOICE_WAVE_BARS.map((bar, i) => (
     <motion.div
-      key={i}
+      key={i} /* TODO: replace with unique id */
       animate={{
         height: [4, bar.peak, 4],
         opacity: [0.3, 1, 0.3],
@@ -941,7 +941,7 @@ export function Roundtable({
                       <div className="flex items-center gap-[3px]">
                         {[0, 1, 2].map((i) => (
                           <motion.div
-                            key={i}
+                            key={i} /* TODO: replace with unique id */
                             animate={{ y: [0, -3, 0], opacity: [0.35, 0.9, 0.35] }}
                             transition={{
                               repeat: Infinity,
@@ -1474,7 +1474,7 @@ export function Roundtable({
                     <div className="flex items-center justify-center gap-[3px] h-3">
                       {[0, 1, 2, 3, 4, 3, 2, 1, 0].map((intensity, i) => (
                         <motion.div
-                          key={i}
+                          key={i} /* TODO: replace with unique id */
                           animate={{
                             scaleY: [0.3, 0.5 + intensity * 0.15, 0.3],
                             opacity: [0.3, 0.7, 0.3],
@@ -1493,7 +1493,7 @@ export function Roundtable({
                     <div className="flex items-center justify-center gap-[3px] h-3">
                       {[0, 1, 2, 3, 2, 1, 0].map((intensity, i) => (
                         <motion.div
-                          key={i}
+                          key={i} /* TODO: replace with unique id */
                           animate={{
                             scaleY: [0.3, 0.45 + intensity * 0.15, 0.3],
                             opacity: [0.25, 0.6, 0.25],
@@ -1985,7 +1985,7 @@ export function Roundtable({
                   <div className="flex items-center gap-[3px]">
                     {[0, 1, 2].map((i) => (
                       <motion.div
-                        key={i}
+                        key={i} /* TODO: replace with unique id */
                         animate={{
                           y: [0, -3, 0],
                           opacity: [0.35, 0.9, 0.35],

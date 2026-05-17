@@ -21,7 +21,7 @@ export function AudioIndicator({ state, agentColor = '#10b981' }: AudioIndicator
     <span className="inline-flex items-end gap-[2px]" style={{ height: 12 }}>
       {Array.from({ length: BAR_COUNT }).map((_, i) => (
         <motion.span
-          key={i}
+          key={i} /* TODO: replace with unique id */
           style={{
             width: 2,
             borderRadius: 1,

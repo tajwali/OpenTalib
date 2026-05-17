@@ -133,7 +133,7 @@ export function GeneralSettings() {
                 <p>{t('settings.clearCacheConfirmDescription')}</p>
                 <ul className="space-y-1.5 ml-1">
                   {clearCacheItems.map((item, i) => (
-                    <li key={i} className="flex items-center gap-2 text-sm">
+                    <li key={i} /* TODO: replace with unique id */ className="flex items-center gap-2 text-sm">
                       <span className="w-1.5 h-1.5 rounded-full bg-destructive/60 shrink-0" />
                       {item.trim()}
                     </li>

@@ -209,7 +209,7 @@ export function SceneSidebar({
                         <div className="flex-1 grid grid-cols-2 gap-1">
                           {[0, 1, 2, 3].map((i) => (
                             <div
-                              key={i}
+                              key={i} /* TODO: replace with unique id */
                               className={cn(
                                 'rounded flex items-center gap-1 px-1',
                                 i === 1
@@ -252,7 +252,7 @@ export function SceneSidebar({
                           <div className="w-1/4 space-y-1 pt-0.5">
                             {[1, 2, 3].map((i) => (
                               <div
-                                key={i}
+                                key={i} /* TODO: replace with unique id */
                                 className="h-0.5 w-full bg-emerald-200/60 dark:bg-emerald-700/30 rounded-full"
                               />
                             ))}
@@ -289,7 +289,7 @@ export function SceneSidebar({
                                 length: col === 0 ? 3 : col === 1 ? 2 : 1,
                               }).map((_, i) => (
                                 <div
-                                  key={i}
+                                  key={i} /* TODO: replace with unique id */
                                   className="h-2 w-full bg-blue-100/60 dark:bg-blue-800/20 rounded border border-blue-200/30 dark:border-blue-700/20"
                                 />
                               ))}

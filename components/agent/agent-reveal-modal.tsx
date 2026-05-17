@@ -373,7 +373,7 @@ export function AgentRevealModal({ agents, open, onClose, onAllRevealed }: Agent
             <div className="flex gap-1.5">
               {agents.map((_, index) => (
                 <div
-                  key={index}
+                  key={index} /* TODO: replace with unique id */
                   className={cn(
                     'size-2 rounded-full transition-colors duration-300',
                     index < revealedCount

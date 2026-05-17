@@ -934,7 +934,7 @@ export function QuizView({ questions, sceneId }: QuizViewProps) {
             <div className="flex gap-1 mt-2">
               {[0, 1, 2].map((i) => (
                 <motion.div
-                  key={i}
+                  key={i} /* TODO: replace with unique id */
                   className="w-2 h-2 rounded-full bg-violet-400"
                   animate={{ opacity: [0.3, 1, 0.3] }}
                   transition={{

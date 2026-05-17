@@ -130,7 +130,7 @@ export function ShapeElementOperate({
           />
           {keypoints.map((keypoint, index) => (
             <div
-              key={index}
+              key={index} /* TODO: replace with unique id */
               className="operate-keypoint-handler absolute w-[10px] h-[10px] left-0 top-0 m-[-5px_0_0_-5px] border border-primary bg-[#ffe873] rounded-[1px]"
               style={keypoint.styles}
               onMouseDown={(e) => {

@@ -542,7 +542,7 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <div key={i} className="h-40 rounded-2xl bg-muted animate-pulse" />
+                  <div key={i} /* TODO: replace with unique id */ className="h-40 rounded-2xl bg-muted animate-pulse" />
                 ))}
               </div>
             ) : students.length === 0 ? (
@@ -659,7 +659,7 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-64 rounded-2xl bg-muted animate-pulse" />
+                  <div key={i} /* TODO: replace with unique id */ className="h-64 rounded-2xl bg-muted animate-pulse" />
                 ))}
               </div>
             ) : courses.length === 0 ? (
@@ -811,7 +811,7 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
             {examResultsLoading ? (
               <div className="space-y-4">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-16 rounded-2xl bg-muted animate-pulse" />
+                  <div key={i} /* TODO: replace with unique id */ className="h-16 rounded-2xl bg-muted animate-pulse" />
                 ))}
               </div>
             ) : examResults.length === 0 ? (
@@ -859,7 +859,7 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
                           </thead>
                           <tbody className="divide-y divide-border">
                             {exam.results.map((r, i) => (
-                              <tr key={i} className="hover:bg-muted/5 transition-colors">
+                              <tr key={i} /* TODO: replace with unique id */ className="hover:bg-muted/5 transition-colors">
                                 <td className="px-6 py-4 font-medium text-foreground">
                                   {r.student_name}
                                 </td>
@@ -1094,8 +1094,8 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
                       ) : (
                         <table className="w-full text-sm">
                           <tbody className="divide-y divide-border">
-                            {teacherStats.popularSubjects.map((s, i) => (
-                              <tr key={i} className="hover:bg-muted/10 transition-colors">
+                            {teacherStats.popularSubjects.map((s) => (
+                              <tr key={s.name} className="hover:bg-muted/10 transition-colors">
                                 <td className="px-5 py-3 flex items-center gap-3">
                                   <span className="text-lg">{s.icon}</span>
                                   <span className="font-medium">{s.name}</span>
@@ -1132,7 +1132,7 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
                       </thead>
                       <tbody className="divide-y divide-border">
                         {teacherStats.recentActivity.map((act, i) => (
-                          <tr key={i} className="hover:bg-muted/10 transition-colors">
+                          <tr key={i} /* TODO: replace with unique id */ /* TODO: replace with unique id */ className="hover:bg-muted/10 transition-colors">
                             <td className="px-5 py-3 font-medium text-foreground">{act.student}</td>
                             <td className="px-5 py-3 text-muted-foreground uppercase text-[10px] font-bold tracking-wider">
                               {act.type}
@@ -1228,7 +1228,7 @@ export default function TeacherDashboard({ userEmail, displayName }: Props) {
                 <div className="space-y-1.5">
                   {selectedStudent.recentQuizzes.map((q, i) => (
                     <div
-                      key={i}
+                      key={i} /* TODO: replace with unique id */ /* TODO: replace with unique id */
                       className="flex items-center justify-between text-sm rounded-lg bg-muted/30 px-3 py-2"
                     >
                       <span className="text-foreground truncate mr-2">{q.classroom_title}</span>

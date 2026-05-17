@@ -82,7 +82,7 @@ export function StaticTable({ elementInfo }: StaticTableProps) {
     >
       <colgroup>
         {colWidths.map((w, i) => (
-          <col key={i} style={{ width: `${w * width}px` }} />
+          <col key={i} /* TODO: replace with unique id */ style={{ width: `${w * width}px` }} />
         ))}
       </colgroup>
       <tbody>

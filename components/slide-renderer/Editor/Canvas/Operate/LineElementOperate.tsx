@@ -124,7 +124,7 @@ export function LineElementOperate({
               </g>
             )}
             {elementInfo.cubic?.map((item, index) => (
-              <g key={index}>
+              <g key={index} /* TODO: replace with unique id */>
                 {index === 0 && (
                   <line
                     className="anchor-line stroke-1 stroke-dasharray-[5_5] opacity-50"

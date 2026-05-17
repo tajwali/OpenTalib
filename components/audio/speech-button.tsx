@@ -91,7 +91,7 @@ export function SpeechButton({
             <span className="flex items-center gap-[2.5px] relative z-10">
               {[0, 1, 2].map((i) => (
                 <span
-                  key={i}
+                  key={i} /* TODO: replace with unique id */
                   className="rounded-full bg-white"
                   style={{
                     width: isMd ? 2.5 : 2,

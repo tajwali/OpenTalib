@@ -153,7 +153,7 @@ export function LectureNotesView({ notes, currentSceneId }: LectureNotesViewProp
                   if (row.kind === 'discussion') {
                     return (
                       <div
-                        key={i}
+                        key={i} /* TODO: replace with unique id */
                         className="my-1.5 flex items-start gap-1.5 rounded-md border border-amber-200/60 dark:border-amber-700/30 bg-amber-50/60 dark:bg-amber-900/10 px-2 py-1.5"
                       >
                         <MessageSquare className="w-3 h-3 text-amber-500 dark:text-amber-400 shrink-0 mt-0.5" />
@@ -166,7 +166,7 @@ export function LectureNotesView({ notes, currentSceneId }: LectureNotesViewProp
                   const actions = row.kind === 'trailing' ? row.inlineActions : row.inlineActions;
                   return (
                     <p
-                      key={i}
+                      key={i} /* TODO: replace with unique id */
                       className="text-[12px] leading-[1.8] text-gray-700 dark:text-gray-300"
                     >
                       {actions.map((a, j) => {

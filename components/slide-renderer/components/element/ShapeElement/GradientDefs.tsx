@@ -19,7 +19,7 @@ export function GradientDefs({ id, type, colors, rotate = 0 }: GradientDefsProps
         gradientTransform={`rotate(${rotate},0.5,0.5)`}
       >
         {colors.map((item, index) => (
-          <stop key={index} offset={`${item.pos}%`} stopColor={item.color} />
+          <stop key={index} /* TODO: replace with unique id */ offset={`${item.pos}%`} stopColor={item.color} />
         ))}
       </linearGradient>
     );
@@ -28,7 +28,7 @@ export function GradientDefs({ id, type, colors, rotate = 0 }: GradientDefsProps
   return (
     <radialGradient id={id}>
       {colors.map((item, index) => (
-        <stop key={index} offset={`${item.pos}%`} stopColor={item.color} />
+        <stop key={index} /* TODO: replace with unique id */ offset={`${item.pos}%`} stopColor={item.color} />
       ))}
     </radialGradient>
   );

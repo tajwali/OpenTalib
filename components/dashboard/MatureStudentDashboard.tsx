@@ -355,7 +355,7 @@ export default function MatureStudentDashboard({ userEmail, displayName }: Props
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-32 rounded-xl bg-muted animate-pulse" />
+                <div key={i} /* TODO: replace with unique id */ className="h-32 rounded-xl bg-muted animate-pulse" />
               ))}
             </div>
           ) : classrooms.length === 0 ? (
@@ -432,7 +432,7 @@ export default function MatureStudentDashboard({ userEmail, displayName }: Props
           {loading ? (
             <div className="space-y-2">
               {[1, 2].map((i) => (
-                <div key={i} className="h-20 rounded-lg bg-muted animate-pulse" />
+                <div key={i} /* TODO: replace with unique id */ className="h-20 rounded-lg bg-muted animate-pulse" />
               ))}
             </div>
           ) : exams.length === 0 ? (
@@ -457,7 +457,7 @@ export default function MatureStudentDashboard({ userEmail, displayName }: Props
           {loading ? (
             <div className="space-y-2">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-12 rounded-lg bg-muted animate-pulse" />
+                <div key={i} /* TODO: replace with unique id */ className="h-12 rounded-lg bg-muted animate-pulse" />
               ))}
             </div>
           ) : quizHistory.length === 0 ? (

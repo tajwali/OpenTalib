@@ -244,7 +244,7 @@ export default function ExamPage() {
                     answers[exam.questions[i].id] !== '';
             return (
               <button
-                key={i}
+                key={exam.questions[i].id}
                 onClick={() => setCurrentQ(i)}
                 className={`flex-shrink-0 w-7 h-7 rounded-full text-xs font-medium transition-colors ${
                   i === currentQ

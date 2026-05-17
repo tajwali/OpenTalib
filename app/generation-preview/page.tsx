@@ -1097,7 +1097,7 @@ function GenerationPreviewContent() {
                         <TooltipContent side="bottom" sideOffset={6}>
                           <div className="space-y-1 py-0.5">
                             {truncationWarnings.map((w, i) => (
-                              <p key={i} className="text-xs leading-relaxed">
+                              <p key={i} /* TODO: replace with unique id */ className="text-xs leading-relaxed">
                                 {w}
                               </p>
                             ))}

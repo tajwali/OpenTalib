@@ -236,7 +236,7 @@ export default function ExamPage() {
 
       <div className="space-y-4">
         {results.map((r, i) => (
-          <div key={i} className="rounded-xl border p-5 space-y-2">
+          <div key={i} /* TODO: replace with unique id */ /* TODO: replace with unique id */ className="rounded-xl border p-5 space-y-2">
             <div className="flex justify-between">
               <span className="text-xs font-medium text-muted-foreground">Q{i + 1}</span>
               <span className={`text-xs font-medium ${

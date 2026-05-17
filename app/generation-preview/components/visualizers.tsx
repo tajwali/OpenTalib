@@ -58,7 +58,7 @@ function PdfScanVisualizer() {
         <div className="p-3 space-y-2 mt-1">
           {[80, 60, 90, 45, 70].map((w, i) => (
             <motion.div
-              key={i}
+              key={i} /* TODO: replace with unique id */
               className="h-1.5 bg-slate-100 dark:bg-slate-700 rounded"
               style={{ width: `${w}%` }}
               animate={{ opacity: [0.4, 1, 0.4] }}
@@ -147,7 +147,7 @@ function WebSearchVisualizer({ sources }: { sources: Array<{ title: string; url:
             ? // Skeleton: pulsing result placeholders
               skeletonResults.map((item, i) => (
                 <motion.div
-                  key={i}
+                  key={i} /* TODO: replace with unique id */
                   className="px-2 py-1.5 space-y-1"
                   animate={{ opacity: [0.3, 0.7, 0.3] }}
                   transition={{
@@ -260,7 +260,7 @@ function StreamingOutlineVisualizer({ outlines }: { outlines: SceneOutline[] }) 
           <div className="space-y-2">
             {[60, 80, 50, 70].map((w, i) => (
               <motion.div
-                key={i}
+                key={i} /* TODO: replace with unique id */
                 className="h-1.5 bg-slate-100 dark:bg-slate-700 rounded"
                 style={{ width: `${w}%` }}
                 animate={{ opacity: [0.3, 0.7, 0.3] }}
@@ -271,7 +271,7 @@ function StreamingOutlineVisualizer({ outlines }: { outlines: SceneOutline[] }) 
         ) : (
           allLines.map((line, i) => (
             <motion.div
-              key={i}
+              key={i} /* TODO: replace with unique id */
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
               className={cn(
@@ -302,7 +302,7 @@ function AgentGenerationVisualizer() {
       <div className="flex gap-3">
         {[0, 1, 2].map((i) => (
           <motion.div
-            key={i}
+            key={i} /* TODO: replace with unique id */
             className="w-14 h-20 rounded-lg bg-gradient-to-br from-purple-400 to-blue-500 dark:from-purple-600 dark:to-blue-700 shadow-lg"
             animate={{ y: [0, -8, 0], rotateZ: [0, 3, -3, 0] }}
             transition={{
@@ -400,7 +400,7 @@ function ContentVisualizer() {
       {/* Subtle orbiting rings (pushed back, slower) */}
       {[0, 1].map((i) => (
         <motion.div
-          key={i}
+          key={i} /* TODO: replace with unique id */
           className={cn(
             'absolute border rounded-full transition-colors duration-1000',
             theme.color === 'blue' && 'border-blue-500/10',
@@ -427,7 +427,7 @@ function ContentVisualizer() {
       <div className="w-40 h-28 relative">
         <AnimatePresence mode="popLayout">
           <motion.div
-            key={index}
+            key={index} /* TODO: replace with unique id */
             variants={variants}
             initial="enter"
             animate="center"
@@ -467,7 +467,7 @@ function ContentVisualizer() {
                   <div className="flex-1 space-y-2">
                     {[0.8, 0.9, 0.6, 0.7].map((w, i) => (
                       <motion.div
-                        key={i}
+                        key={i} /* TODO: replace with unique id */
                         initial={{ width: 0 }}
                         animate={{ width: `${w * 100}%` }}
                         transition={{ delay: 0.3 + i * 0.1 }}
@@ -502,7 +502,7 @@ function ContentVisualizer() {
                 <div className="grid grid-cols-2 gap-2">
                   {[0, 1, 2, 3].map((i) => (
                     <motion.div
-                      key={i}
+                      key={i} /* TODO: replace with unique id */
                       initial={{ scale: 0.8, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       transition={{ delay: 0.3 + i * 0.1 }}
@@ -586,7 +586,7 @@ function ContentVisualizer() {
                   >
                     {[1, 2, 3].map((i) => (
                       <div
-                        key={i}
+                        key={i} /* TODO: replace with unique id */
                         className="h-1 w-full bg-slate-200 dark:bg-slate-600 rounded-full"
                       />
                     ))}
@@ -715,7 +715,7 @@ function ActionsVisualizer() {
             const isPast = i < activeIdx;
             return (
               <motion.div
-                key={i}
+                key={i} /* TODO: replace with unique id */
                 initial={{ opacity: 0, x: -12 }}
                 animate={{ opacity: isPast ? 0.4 : 1, x: 0 }}
                 transition={{ delay: 0.1 + i * 0.08, duration: 0.3 }}
